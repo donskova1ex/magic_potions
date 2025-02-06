@@ -15,7 +15,7 @@ func (r *Repository) CreateIngredients(ctx context.Context, tx *sql.Tx, ingredie
 	var ingredientsSlice []*domain.Ingredient
 	for _, ingredient := range ingredients {
 		exitingIngredient, err := r.getIngredientByName(ctx, tx, ingredient.Name)
-		if err != nil {
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return nil, err
 		}
 		if exitingIngredient != nil {
