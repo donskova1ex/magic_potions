@@ -326,12 +326,12 @@ components:
         brew_time_seconds: 160
         ingredients:
         - name: frog_leg
-          id: "7"
+          uuid: "7"
         - name: frog_leg
-          id: "7"
-        id: "940"
+          uuid: "7"
+        uuid: "940"
       properties:
-        id:
+        uuid:
           example: "940"
           type: string
         name:
@@ -353,9 +353,9 @@ components:
     ingredient:
       example:
         name: frog_leg
-        id: "7"
+        uuid: "7"
       properties:
-        id:
+        uuid:
           example: "7"
           type: string
         name:

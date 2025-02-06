@@ -1,4 +1,5 @@
 module github.com/donskova1ex/magic_potions
+
 go 1.23.0
 
 require (

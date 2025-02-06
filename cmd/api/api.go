@@ -11,24 +11,66 @@
 package main
 
 import (
-	openapi2 "github.com/donskova1ex/magic_potions/openapi"
+	"github.com/donskova1ex/magic_potions/internal/processors"
+	"github.com/donskova1ex/magic_potions/internal/repositories"
 	"log"
+	"log/slog"
 	"net/http"
+	"os"
+
+	openapi "github.com/donskova1ex/magic_potions/openapi"
 )
 
 func main() {
 	log.Printf("Server started")
 
-	IngredientAPIService := openapi2.NewIngredientAPIService()
-	IngredientAPIController := openapi2.NewIngredientAPIController(IngredientAPIService)
+	logJSONHandler := slog.NewJSONHandler(os.Stdout, nil)
+	logger := slog.New(logJSONHandler)
 
-	RecipeAPIService := openapi2.NewRecipeAPIService()
-	RecipeAPIController := openapi2.NewRecipeAPIController(RecipeAPIService)
+	slog.SetDefault(logger)
 
-	WitchAPIService := openapi2.NewWitchAPIService()
-	WitchAPIController := openapi2.NewWitchAPIController(WitchAPIService)
+	pgDSN := os.Getenv("POSTGRES_DSN")
+	if pgDSN == "" {
+		logger.Error("empty POSTGRES_DSN")
+		os.Exit(1)
+	}
 
-	router := openapi2.NewRouter(IngredientAPIController, RecipeAPIController, WitchAPIController)
+	apiPort := os.Getenv("API_PORT")
+	if apiPort == "" {
+		logger.Error("empty API_PORT")
+		os.Exit(1)
+	}
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	db, err := repositories.NewPostgresDB(pgDSN)
+	if err != nil {
+		logger.Error("can not create postgres db connection", slog.String("error", err.Error()))
+		return
+	}
+	defer db.Close()
+
+	repository := repositories.NewRepository(db, logger)
+
+	ingredientProcessor := processors.NewIngredient(repository, logger)
+	IngredientAPIService := openapi.NewIngredientAPIService(ingredientProcessor, logger)
+	IngredientAPIController := openapi.NewIngredientAPIController(IngredientAPIService)
+
+	recipeProcessor := processors.NewRecipe(repository, logger)
+	RecipeAPIService := openapi.NewRecipeAPIService(recipeProcessor, logger)
+	RecipeAPIController := openapi.NewRecipeAPIController(RecipeAPIService)
+
+	witchProcessor := processors.NewWitch(repository, logger)
+	WitchAPIService := openapi.NewWitchAPIService(witchProcessor, logger)
+	WitchAPIController := openapi.NewWitchAPIController(WitchAPIService)
+
+	router := openapi.NewRouter(IngredientAPIController, RecipeAPIController, WitchAPIController)
+
+	httpServer := http.Server{
+		Addr:     ":" + apiPort,
+		ErrorLog: slog.NewLogLogger(logJSONHandler, slog.LevelError),
+		Handler:  router,
+	}
+	logger.Info("application started", slog.String("port", apiPort))
+	if err := httpServer.ListenAndServe(); err != nil {
+		logger.Error("failed to start server", slog.String("err", err.Error()))
+	}
 }

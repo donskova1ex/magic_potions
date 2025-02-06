@@ -11,7 +11,7 @@
 package openapi
 
 type Recipe struct {
-	Id string `json:"id,omitempty"`
+	Uuid string `json:"uuid"`
 
 	Name string `json:"name"`
 
@@ -23,6 +23,7 @@ type Recipe struct {
 // AssertRecipeRequired checks if the required fields are not zero-ed
 func AssertRecipeRequired(obj Recipe) error {
 	elements := map[string]interface{}{
+		"uuid":              obj.Uuid,
 		"name":              obj.Name,
 		"brew_time_seconds": obj.BrewTimeSeconds,
 		"ingredients":       obj.Ingredients,

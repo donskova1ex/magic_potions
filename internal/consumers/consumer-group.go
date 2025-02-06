@@ -48,12 +48,9 @@ func newSaramaConsumerGroup(cg *ConsumerGroup) (sarama.ConsumerGroup, error) {
 func (cg *ConsumerGroup) Run(ctx context.Context) error {
 
 	//TODO: вытащить конфиг во внешку, что бы было универсально для всего//проверить с Артуром
-	//config := sarama.NewConfig()
-	//config.Consumer.Offsets.Initial = sarama.OffsetOldest
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	//client, err := sarama.NewConsumerGroup(cg.brokers, cg.group, config)
 	client, err := newSaramaConsumerGroup(cg)
 	if err != nil {
 		return fmt.Errorf("error creating consumer group client: %w", err)

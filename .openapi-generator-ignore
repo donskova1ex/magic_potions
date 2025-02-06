@@ -22,4 +22,7 @@
 # Then explicitly reverse the ignore rule for a single file:
 #!docs/README.md
 go.mod
+openapi/api_ingredient_service.go
+openapi/api_recipe_service.go
+openapi/api_witch_service.go
 main.go

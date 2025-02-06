@@ -13,49 +13,75 @@ package openapi
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/donskova1ex/magic_potions/internal"
+	"github.com/donskova1ex/magic_potions/internal/domain"
+	"log/slog"
 	"net/http"
 )
+
+type WitchesProcessor interface {
+	WitchesList(ctx context.Context) ([]*domain.Witch, error)
+	GetWitchByUUID(ctx context.Context, uuid string) (*domain.Witch, error)
+	DeleteWitchByUUID(ctx context.Context, uuid string) error
+}
 
 // WitchAPIService is a service that implements the logic for the WitchAPIServicer
 // This service should implement the business logic for every endpoint for the WitchAPI API.
 // Include any external packages or services that will be required by this service.
 type WitchAPIService struct {
+	witchesProcessor WitchesProcessor
+	log              *slog.Logger
 }
 
 // NewWitchAPIService creates a default api service
-func NewWitchAPIService() *WitchAPIService {
-	return &WitchAPIService{}
+func NewWitchAPIService(witchesProcessor WitchesProcessor, log *slog.Logger) *WitchAPIService {
+	return &WitchAPIService{witchesProcessor: witchesProcessor, log: log}
 }
 
 // WitchesList - witches list
 func (s *WitchAPIService) WitchesList(ctx context.Context) (ImplResponse, error) {
-	// TODO - update WitchesList with the required logic for this service method.
-	// Add api_witch_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+	witches, err := s.witchesProcessor.WitchesList(ctx)
+	if errors.Is(err, internal.ErrReadRows) {
+		return Response(http.StatusInternalServerError, nil), err
+	}
+	openApiWitches := domainWitchesToOpenAPI(witches)
+	if len(openApiWitches) == 0 {
+		return Response(http.StatusNoContent, nil), nil
+	}
+	return Response(http.StatusOK, openApiWitches), nil
+}
 
-	// TODO: Uncomment the next line to return response Response(200, []Witch{}) or use other options such as http.Ok ...
-	// return Response(200, []Witch{}), nil
-
-	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
-	// return Response(204, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("WitchesList method not implemented")
+func domainWitchesToOpenAPI(domainWitches []*domain.Witch) []Witch {
+	witches := make([]Witch, 0, len(domainWitches))
+	for _, ing := range domainWitches {
+		witches = append(witches, Witch{
+			Uuid: ing.UUID,
+			Name: ing.Name,
+		})
+	}
+	return witches
 }
 
 // GetWitchByUUID - Find witch by UUID
 func (s *WitchAPIService) GetWitchByUUID(ctx context.Context, uuid string) (ImplResponse, error) {
-	// TODO - update GetWitchByUUID with the required logic for this service method.
-	// Add api_witch_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+	if uuid == "" {
+		return Response(http.StatusBadRequest, nil), errors.New("uuid is required")
+	}
 
-	// TODO: Uncomment the next line to return response Response(200, Witch{}) or use other options such as http.Ok ...
-	// return Response(200, Witch{}), nil
+	witch, err := s.witchesProcessor.GetWitchByUUID(ctx, uuid)
 
-	// TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
-	// return Response(400, nil),nil
-
-	// TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
-	// return Response(404, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("GetWitchByUUID method not implemented")
+	if errors.Is(err, internal.ErrNotFound) {
+		return Response(http.StatusBadRequest, nil), err
+	}
+	if errors.Is(err, internal.ErrReadRows) {
+		return Response(http.StatusInternalServerError, nil), err
+	}
+	openApiWitch := Witch{
+		Uuid: witch.UUID,
+		Name: witch.Name,
+	}
+	return Response(http.StatusOK, openApiWitch), nil
 }
 
 // UpdateWitchByUUID - Update a witch in the store with form data
@@ -80,11 +106,8 @@ func (s *WitchAPIService) UpdateWitchByUUID(ctx context.Context, uuid string) (I
 
 // DeleteWitchByUUID - Deletes a witch
 func (s *WitchAPIService) DeleteWitchByUUID(ctx context.Context, uuid string) (ImplResponse, error) {
-	// TODO - update DeleteWitchByUUID with the required logic for this service method.
-	// Add api_witch_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
-	// return Response(400, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("DeleteWitchByUUID method not implemented")
+	if err := s.witchesProcessor.DeleteWitchByUUID(ctx, uuid); err != nil {
+		return Response(http.StatusBadRequest, nil), err
+	}
+	return Response(http.StatusOK, fmt.Sprintf("witch with uuid: %s, deleted", uuid)), nil
 }

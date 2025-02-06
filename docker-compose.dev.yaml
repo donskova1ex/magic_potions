@@ -20,7 +20,7 @@ x-kafka-broker-base: &kafka_broker_base
 
 services:
   postgres:
-    container_name: mylearningproject.postgres
+    container_name: magic_potions.postgres
     image: postgres:15
     hostname: postgres
     environment:
@@ -41,7 +41,7 @@ services:
       retries: 5
       start_period: 30s
   migrations-up:
-    container_name: mylearningproject.migrations-up
+    container_name: magic_potions.migrations-up
     environment:
       - GOOSE_DRIVER=${GOOSE_DRIVER}
       - GOOSE_DBSTRING=${GOOSE_DBSTRING}
@@ -53,7 +53,7 @@ services:
       postgres:
         condition: service_healthy
   migrations-down:
-    container_name: mylearningproject.migrations-down
+    container_name: magic_potions.migrations-down
     environment:
       - GOOSE_DRIVER=${GOOSE_DRIVER}
       - GOOSE_DBSTRING=${GOOSE_DBSTRING}
@@ -67,7 +67,7 @@ services:
       postgres:
         condition: service_healthy
   api:
-    container_name: mylearningproject.api
+    container_name: magic_potions.api
     environment:
       - API_PORT=${API_PORT}
       - POSTGRES_DSN=${POSTGRES_DSN}

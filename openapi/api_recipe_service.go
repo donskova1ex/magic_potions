@@ -13,49 +13,78 @@ package openapi
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/donskova1ex/magic_potions/internal"
+	"github.com/donskova1ex/magic_potions/internal/domain"
+	"log/slog"
 	"net/http"
 )
+
+type RecipesProcessor interface {
+	RecipesList(ctx context.Context) ([]*domain.Recipe, error)
+	RecipeByUUID(ctx context.Context, uuid string) (*domain.Recipe, error)
+	DeleteRecipeByUUID(ctx context.Context, uuid string) error
+}
 
 // RecipeAPIService is a service that implements the logic for the RecipeAPIServicer
 // This service should implement the business logic for every endpoint for the RecipeAPI API.
 // Include any external packages or services that will be required by this service.
 type RecipeAPIService struct {
+	recipesProcessor RecipesProcessor
+	log              *slog.Logger
 }
 
 // NewRecipeAPIService creates a default api service
-func NewRecipeAPIService() *RecipeAPIService {
-	return &RecipeAPIService{}
+func NewRecipeAPIService(recipesProcessor RecipesProcessor, log *slog.Logger) *RecipeAPIService {
+	return &RecipeAPIService{
+		recipesProcessor: recipesProcessor,
+		log:              log,
+	}
 }
 
 // RecipesList - recipes list
 func (s *RecipeAPIService) RecipesList(ctx context.Context) (ImplResponse, error) {
-	// TODO - update RecipesList with the required logic for this service method.
-	// Add api_recipe_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+	recipes, err := s.recipesProcessor.RecipesList(ctx)
+	if errors.Is(err, internal.ErrReadRows) {
+		return Response(http.StatusInternalServerError, nil), err
+	}
+	openApiRecipes := domainRecipesToOpenApi(recipes)
+	if len(openApiRecipes) == 0 {
+		return Response(http.StatusNoContent, recipes), nil
+	}
+	return Response(http.StatusOK, openApiRecipes), nil
+}
 
-	// TODO: Uncomment the next line to return response Response(200, []Recipe{}) or use other options such as http.Ok ...
-	// return Response(200, []Recipe{}), nil
-
-	// TODO: Uncomment the next line to return response Response(204, {}) or use other options such as http.Ok ...
-	// return Response(204, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("RecipesList method not implemented")
+func domainRecipesToOpenApi(domainRecipes []*domain.Recipe) []Recipe {
+	recipes := make([]Recipe, 0, len(domainRecipes))
+	for _, recipe := range domainRecipes {
+		recipes = append(recipes, Recipe{
+			Uuid:            recipe.UUID,
+			Name:            recipe.Name,
+			BrewTimeSeconds: recipe.BrewTimeSeconds,
+		})
+	}
+	return recipes
 }
 
 // GetRecipeByUUID - Find recipe by UUID
 func (s *RecipeAPIService) GetRecipeByUUID(ctx context.Context, uuid string) (ImplResponse, error) {
-	// TODO - update GetRecipeByUUID with the required logic for this service method.
-	// Add api_recipe_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, Recipe{}) or use other options such as http.Ok ...
-	// return Response(200, Recipe{}), nil
-
-	// TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
-	// return Response(400, nil),nil
-
-	// TODO: Uncomment the next line to return response Response(404, {}) or use other options such as http.Ok ...
-	// return Response(404, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("GetRecipeByUUID method not implemented")
+	if uuid == "" {
+		return Response(http.StatusBadRequest, nil), errors.New("uuid is required")
+	}
+	recipe, err := s.recipesProcessor.RecipeByUUID(ctx, uuid)
+	if errors.Is(err, internal.ErrNotFound) {
+		return Response(http.StatusNotFound, nil), err
+	}
+	if errors.Is(err, internal.ErrReadRows) {
+		return Response(http.StatusBadRequest, nil), err
+	}
+	openApiRecipe := Recipe{
+		Uuid:            recipe.UUID,
+		Name:            recipe.Name,
+		BrewTimeSeconds: recipe.BrewTimeSeconds,
+	}
+	return Response(http.StatusOK, openApiRecipe), nil
 }
 
 // UpdateRecipeByUUID - Update a recipe by uuid
@@ -80,11 +109,16 @@ func (s *RecipeAPIService) UpdateRecipeByUUID(ctx context.Context, uuid string, 
 
 // DeleteRecipeByUUID - Delete recipe
 func (s *RecipeAPIService) DeleteRecipeByUUID(ctx context.Context, uuid string) (ImplResponse, error) {
-	// TODO - update DeleteRecipeByUUID with the required logic for this service method.
-	// Add api_recipe_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
+	err := s.recipesProcessor.DeleteRecipeByUUID(ctx, uuid)
 
-	// TODO: Uncomment the next line to return response Response(400, {}) or use other options such as http.Ok ...
-	// return Response(400, nil),nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("DeleteRecipeByUUID method not implemented")
+	if errors.Is(err, internal.ErrGetByUUID) {
+		return Response(http.StatusBadRequest, nil), err
+	}
+	if errors.Is(err, internal.ErrReadRows) {
+		return Response(http.StatusInternalServerError, nil), err
+	}
+	if errors.Is(err, internal.ErrNotDelete) {
+		return Response(http.StatusBadRequest, nil), err
+	}
+	return Response(http.StatusOK, fmt.Sprintf("recipe with uuid: %s, deleted", uuid)), nil
 }

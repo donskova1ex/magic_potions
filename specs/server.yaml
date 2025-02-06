@@ -309,7 +309,7 @@ components:
         - ingredients
       type: object
       properties: 
-        id: 
+        uuid:
           type: string
           example: 940
         name: 
@@ -328,7 +328,7 @@ components:
         - name
       type: object
       properties: 
-        id: 
+        uuid:
           type: string
           example: 7
         name: 
