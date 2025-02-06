@@ -27,6 +27,9 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*
 	}()
 
 	ingredients, err := r.CreateIngredients(ctx, tx, recipe.Ingredients)
+	if err != nil {
+		return nil, fmt.Errorf("error creating ingredients from recipe: %w", internal.ErrCreateIngredientsByRecipe)
+	}
 	newRecipe, err := r.createRecipe(ctx, tx, recipe, ingredients)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new recipe: %w", internal.ErrCreateRecipe)
