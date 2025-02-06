@@ -26,9 +26,8 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*
 		}
 	}()
 
-	ingredients, err := r.createIngredients(ctx, tx, recipe.Ingredients)
-
-	newRecipe, err := r.createRecipe(ctx, tx, recipe)
+	ingredients, err := r.CreateIngredients(ctx, tx, recipe.Ingredients)
+	newRecipe, err := r.createRecipe(ctx, tx, recipe, ingredients)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new recipe: %w", internal.ErrCreateRecipe)
 	}
@@ -40,7 +39,7 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*
 	return newRecipe, nil
 }
 
-func (r *Repository) createRecipe(ctx context.Context, tx *sql.Tx, recipe *domain.Recipe) (*domain.Recipe, error) {
+func (r *Repository) createRecipe(ctx context.Context, tx *sql.Tx, recipe *domain.Recipe, ingredients []*domain.Ingredient) (*domain.Recipe, error) {
 	var id uint32
 
 	query := `INSERT INTO recipes (uuid, Name, BrewTimeSeconds) values ($1, $2, $3) 
@@ -60,6 +59,7 @@ func (r *Repository) createRecipe(ctx context.Context, tx *sql.Tx, recipe *domai
 		UUID:            newUUID,
 		Name:            recipe.Name,
 		BrewTimeSeconds: recipe.BrewTimeSeconds,
+		Ingredients:     ingredients,
 	}
 
 	return newRecipe, nil
