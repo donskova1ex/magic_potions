@@ -5,32 +5,25 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/donskova1ex/magic_potions/internal"
 	"github.com/donskova1ex/magic_potions/internal/domain"
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 )
 
-func (r *Repository) CreateIngredients(ctx context.Context, tx *sql.Tx, ingredients []*domain.Ingredient) ([]*domain.Ingredient, error) {
-	var ingredientsSlice []*domain.Ingredient
-	for _, ingredient := range ingredients {
-		exitingIngredient, err := r.getIngredientByName(ctx, tx, ingredient.Name)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			return nil, err
-		}
-		if exitingIngredient != nil {
-			ingredientsSlice = append(ingredientsSlice, exitingIngredient)
-		}
-		newIngredient, err := r.CreateIngredient(ctx, ingredient)
-		if err != nil {
-			return nil, err
-		}
-		ingredientsSlice = append(ingredientsSlice, newIngredient)
-	}
-	if len(ingredientsSlice) == 0 {
-		return nil, fmt.Errorf("no ingredients found: %w", internal.ErrNotFound)
-	}
-	return ingredientsSlice, nil
+func (r *Repository) createIngredients(ctx context.Context, tx *sqlx.Tx, ingredients []*domain.Ingredient) ([]*domain.Ingredient, error) {
+	//INSERT INTO ingredients (name, uuid) values ('ground', '1'), ('salt', '2'), ('chicken', '3') on conflict on constraint ingredients_name_key do update set name=excluded.name returning id;
+	query := `
+	INSERT INTO ingredients (name, uuid) 
+	values (:name, gen_random_uuid()) 
+	on conflict on constraint ingredients_name_key 
+	do update set name=excluded.name 
+	returning id, name;
+	`
+	tx.NamedExecContext(ctx, query, ingredients)
+
 }
 
 func (r *Repository) CreateIngredient(ctx context.Context, ingredient *domain.Ingredient) (*domain.Ingredient, error) {
@@ -119,18 +112,4 @@ func (r *Repository) UpdateIngredientByUUID(ctx context.Context, ingredient *dom
 	}
 	return ingredient, nil
 
-}
-
-func (r *Repository) getIngredientByName(ctx context.Context, tx *sql.Tx, name string) (*domain.Ingredient, error) {
-	ingredient := &domain.Ingredient{}
-	query := "SELECT name, uuid FROM ingredients WHERE name = $1"
-	row := tx.QueryRowContext(ctx, query, name)
-	err := row.Scan(&ingredient)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, fmt.Errorf("%w with name [%s]", internal.ErrNotFound, name)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("can not read ingredient from db: %w", internal.ErrReadRows)
-	}
-	return ingredient, nil
 }

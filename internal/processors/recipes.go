@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/donskova1ex/magic_potions/internal/domain"
 	"log/slog"
 	"time"
+
+	"github.com/donskova1ex/magic_potions/internal/consumers"
+	"github.com/donskova1ex/magic_potions/internal/domain"
 )
 
 type RecipesRepository interface {
@@ -87,7 +89,9 @@ func (rec *recipes) UpdateRecipeByID(ctx context.Context, recipe *domain.Recipe)
 
 // TODO base insert
 func (rec *recipes) Save(ctx context.Context, key []byte, body []byte, timeStamp time.Time) error {
-	recipe := &domain.Recipe{}
+	//TODO: Контракт на количество ингредиентов в рецепте {name:water, quantity:6}
+
+	recipe := &consumers.Recipe{}
 	if err := json.Unmarshal(body, recipe); err != nil {
 		rec.log.Error(
 			"can not unmarshal recipe",
@@ -96,17 +100,7 @@ func (rec *recipes) Save(ctx context.Context, key []byte, body []byte, timeStamp
 		)
 		return nil
 	}
+	fmt.Printf("recipe: %+v\n", recipe)
 
-	// //TODO: проверить создание
-	// for _, ingredient := range recipe.Ingredients {
-	// 	newIngredient := &domain.Ingredient{}
-	// 	newIngredient.Name = ingredient
-	// 	_, err := rec.recipesRepository.CreateIngredient(ctx, newIngredient)
-	// 	if err != nil {
-	// 		rec.log.Error("unable to create ingredient", err)
-	// 	}
-	// }
-
-	//fmt.Sprintf("%+v", *recipe)
 	return nil
 }

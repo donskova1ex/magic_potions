@@ -5,15 +5,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
+
 	"github.com/donskova1ex/magic_potions/internal"
 	"github.com/donskova1ex/magic_potions/internal/domain"
 	"github.com/google/uuid"
-	"log/slog"
+	"github.com/jmoiron/sqlx"
 )
 
 // TODO: проверить транзакции, если норм, то сделать аналогично во все запросы
 func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*domain.Recipe, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginTxx(ctx, nil)
 
 	if err != nil {
 		return nil, fmt.Errorf("error start transaction: %w", internal.ErrRecipeTransaction)
@@ -42,7 +44,7 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*
 	return newRecipe, nil
 }
 
-func (r *Repository) createRecipe(ctx context.Context, tx *sql.Tx, recipe *domain.Recipe, ingredients []*domain.Ingredient) (*domain.Recipe, error) {
+func (r *Repository) createRecipe(ctx context.Context, tx *sqlx.Tx, recipe *domain.Recipe, ingredients []*domain.Ingredient) (*domain.Recipe, error) {
 	var id uint32
 
 	query := `INSERT INTO recipes (uuid, Name, BrewTimeSeconds) values ($1, $2, $3) 
@@ -119,4 +121,12 @@ func (r *Repository) UpdateRecipeByUUID(ctx context.Context, recipe *domain.Reci
 		return nil, fmt.Errorf("there is no object with this ID: %w", err)
 	}
 	return recipe, nil
+}
+
+func saveRecipesToIngredients(ctx context.Context, tx *sql.Tx, recipeId string, ingredients []*domain.Ingredient) error {
+
+	// for _, ingredient := range ingredients {
+	// 	query := `INSERT into recipes_to_ingredients (recipe_id, ingredient_id, quatity) values($1, $2, $3)`
+	// }
+	return nil
 }

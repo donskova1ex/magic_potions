@@ -37,9 +37,9 @@ func (c *RecipesConsumer) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 				return nil
 			}
 			log.Printf("Consumer kafka message: %s\n", string(message.Value))
-			//if err := c.saver.Save(session.Context(), message.Value); err != nil {
-			//
-			//}
+			// if err := c.saver.Save(session.Context(), message.Value); err != nil {
+
+			// }
 			//saving message прокинуть процессор проверка на корректность обработки.
 			//Будет пытаться вычитать до бесконечности, пока сообщение не будет вычитано
 			//retry  при вычитвании сообщения.
