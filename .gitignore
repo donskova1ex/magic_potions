@@ -1,0 +1,8 @@
+.openapi-generator/
+
+bin/
+.idea/vcs.xml
+.idea/mylearningproject.iml
+.idea/modules.xml
+.idea/.gitignore
+/.idea/material_theme_project_new.xml

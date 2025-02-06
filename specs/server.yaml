@@ -1,0 +1,336 @@
+openapi: 3.0.0
+info:
+  title: Swagger Potion maker - OpenAPI 3.0
+  description: |-
+   Сервис изготовления зелий
+  version: 1.0.0
+servers:
+  - url: https://magicpotions.swagger.io/api/v1
+tags:
+  - name: witch
+    description: Everything about witches
+  - name: recipe
+    description: Everything about witches recipes
+  - name: ingredient
+    description: Everything about ingredients
+  - name: potion
+    description: Everything about potions
+paths:
+  /witches:
+    get:
+      tags: 
+        - witch
+      summary: witches list
+      description: witches list
+      operationId: witchesList
+      responses:
+        '200':
+          description: successful operation
+          content: 
+            application/json: 
+              schema: 
+                type: array
+                items: 
+                  $ref: '#/components/schemas/witch'
+        '204':
+          description: Empty array
+  /witch/{uuid}:
+    get: 
+      tags: 
+        - witch
+      summary: Find witch by UUID
+      description: Returns a single witch
+      operationId: getWitchByUUID
+      parameters: 
+        - name: uuid
+          in: path
+          description: UUID of witch to return
+          required: true
+          schema: 
+            type: string
+      responses: 
+        '200':
+          description: successful operation
+          content: 
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/witch'
+        '400':
+          description: Invalid UUID supplied
+        '404':
+          description: Witch not found
+    delete:
+      tags:
+        - witch
+      summary: Deletes a witch
+      description: delete a witch
+      operationId: deleteWitchByUUID
+      parameters:
+        - name: uuid
+          in: path
+          description: Witch uuid to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        '400':
+          description: Invalid witch value
+    put:
+      tags: 
+        - witch
+      summary: Update a witch in the store with form data
+      description: ''
+      operationId: updateWitchByUUID
+      parameters:
+        - name: uuid
+          in: path
+          description: Edit witch by uuid
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/witch'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/witch'
+        '400':
+          description: Invalid UUID supplied
+        '404':
+          description: Witch not found
+        '422':
+          description: Validation exception
+
+  /recipes:
+    get:
+      tags: 
+        - recipe
+      summary: recipes list
+      description: recipes list
+      operationId: recipesList
+      responses:
+        '200':
+          description: successful operation
+          content: 
+            application/json: 
+              schema: 
+                type: array
+                items: 
+                  $ref: '#/components/schemas/recipe'
+        '204':
+          description: Empty array
+  /recipe/{uuid}:
+    get: 
+      tags: 
+        - recipe
+      summary: Find recipe by UUID
+      description: Returns a single recipe
+      operationId: getRecipeByUUID
+      parameters: 
+        - name: uuid
+          in: path
+          description: UUID of recipe to return
+          required: true
+          schema: 
+            type: string
+      responses: 
+        '200':
+          description: successful operation
+          content: 
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/recipe'
+        '400':
+          description: Invalid UUID supplied
+        '404':
+          description: Recipe not found
+    put:
+      tags: 
+        - recipe
+      summary: Update a recipe by uuid
+      description: ''
+      operationId: updateRecipeByUUID
+      parameters: 
+        - name: uuid
+          in: path
+          description: UUID of recipe to edit
+          required: true
+          schema: 
+            type: string
+      requestBody: 
+        description: Update a Recipe
+        content:
+          application/json: 
+            schema: 
+              $ref: '#/components/schemas/recipe' 
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/recipe'
+        '400':
+          description: Invalid UUID supplied
+        '404':
+          description: Witch not found
+        '422':
+          description: Validation exception
+    delete:
+      tags:
+        - recipe
+      summary: Delete recipe
+      description: Delete recipe
+      operationId: deleteRecipeByUUID
+      parameters:
+        - name: uuid
+          in: path
+          description: Recipe uuid to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        '400':
+          description: Invalid witch value
+  /ingredients:
+    get:
+      tags: 
+        - ingredient
+      summary: Ingredients list
+      description: Ingredients list
+      operationId: ingredientsList
+      responses:
+        '200':
+          description: successful operation
+          content: 
+            application/json: 
+              schema: 
+                type: array
+                items: 
+                  $ref: '#/components/schemas/ingredient'
+        '204':
+          description: Empty array
+  /ingredient/{uuid}:
+    get: 
+      tags: 
+        - ingredient
+      summary: Find ingredient by UUID
+      description: Returns a single ingredient
+      operationId: getIngredientByUUID
+      parameters: 
+        - name: uuid
+          in: path
+          description: UUID of ingredient to return
+          required: true
+          schema: 
+            type: string
+      responses: 
+        '200':
+          description: successful operation
+          content: 
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/ingredient'
+        '400':
+          description: Invalid UUID supplied
+        '404':
+          description: Recipe not found
+    put:
+      tags: 
+        - ingredient
+      summary: Update a ingredient by uuid
+      description: Update a ingredient by uuid
+      operationId: updateIngredientByUUID
+      parameters: 
+        - name: uuid
+          in: path
+          description: UUID of ingredient to return
+          required: true
+          schema: 
+            type: string
+      requestBody: 
+        description: Update a ingredient
+        content:
+          application/json: 
+            schema: 
+              $ref: '#/components/schemas/ingredient' 
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ingredient'
+        '400':
+          description: Invalid UUID supplied
+        '404':
+          description: Ingredient not found
+        '422':
+          description: Validation exception
+    delete:
+      tags:
+        - ingredient
+      summary: Delete ingredient
+      description: Delete ingredient
+      operationId: deleteIngredientByUUID
+      parameters:
+        - name: uuid
+          in: path
+          description: ingredient uuid to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        '400':
+          description: Invalid ingredient value
+components:
+  schemas:
+    witch:
+      required:
+        - uuid
+        - name
+      type: object
+      properties:
+        uuid:
+          type: string
+          example: 153
+        name:
+          type: string
+          example: witch1
+    recipe:
+      required: 
+        - uuid
+        - name
+        - brew_time_seconds
+        - ingredients
+      type: object
+      properties: 
+        id: 
+          type: string
+          example: 940
+        name: 
+          type: string
+          example: power_elixir
+        brew_time_seconds:
+          type: integer
+          example: 160
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/ingredient'
+    ingredient:
+      required: 
+        - uuid
+        - name
+      type: object
+      properties: 
+        id: 
+          type: string
+          example: 7
+        name: 
+          type: string
+          example: frog_leg
