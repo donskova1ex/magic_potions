@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
@@ -16,8 +17,8 @@ type Config struct {
 	SSLMode  string
 }
 
-func NewPostgresDB(pgDSN string) (*sqlx.DB, error) {
-	db, err := sqlx.Open("postgres", pgDSN)
+func NewPostgresDB(ctx context.Context, pgDSN string) (*sqlx.DB, error) {
+	db, err := sqlx.ConnectContext(ctx, "postgres", pgDSN)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to open connection to postgres: %w", err)

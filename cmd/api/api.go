@@ -11,17 +11,25 @@
 package main
 
 import (
-	"github.com/donskova1ex/magic_potions/internal/processors"
-	"github.com/donskova1ex/magic_potions/internal/repositories"
+	"context"
 	"log"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
+
+	"github.com/donskova1ex/magic_potions/internal/processors"
+	"github.com/donskova1ex/magic_potions/internal/repositories"
 
 	openapi "github.com/donskova1ex/magic_potions/openapi"
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	log.Printf("Server started")
 
 	logJSONHandler := slog.NewJSONHandler(os.Stdout, nil)
@@ -41,7 +49,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := repositories.NewPostgresDB(pgDSN)
+	db, err := repositories.NewPostgresDB(ctx, pgDSN)
 	if err != nil {
 		logger.Error("can not create postgres db connection", slog.String("error", err.Error()))
 		return
@@ -69,8 +77,36 @@ func main() {
 		ErrorLog: slog.NewLogLogger(logJSONHandler, slog.LevelError),
 		Handler:  router,
 	}
+	shutdownWg := &sync.WaitGroup{}
+	shutdownWg.Add(2)
+
+	func ()  {
+		defer shutdownWg.Done()
+		signals := make(chan os.Signal, 1)
+		signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
+		select{
+		case <-signals:
+			cancel()
+		case <-ctx.Done(): 
+		}
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Second * 5)
+		defer cancel()
+
+		err := httpServer.Shutdown(shutdownCtx)
+		if err != nil {
+			logger.Error("can not shutdown http server")
+		}
+		
+		err = db.Close()
+		if err != nil {
+
+		}
+	}()
 	logger.Info("application started", slog.String("port", apiPort))
 	if err := httpServer.ListenAndServe(); err != nil {
 		logger.Error("failed to start server", slog.String("err", err.Error()))
 	}
 }
+
+
+//TODO: gracefull shutdow сделать
