@@ -12,17 +12,14 @@ package main
 
 import (
 	"context"
+	"github.com/donskova1ex/magic_potions/internal"
+	"github.com/donskova1ex/magic_potions/internal/processors"
+	"github.com/donskova1ex/magic_potions/internal/repositories"
 	"log"
 	"log/slog"
 	"net/http"
 	"os"
-	"os/signal"
-	"sync"
-	"syscall"
 	"time"
-
-	"github.com/donskova1ex/magic_potions/internal/processors"
-	"github.com/donskova1ex/magic_potions/internal/repositories"
 
 	openapi "github.com/donskova1ex/magic_potions/openapi"
 )
@@ -77,36 +74,46 @@ func main() {
 		ErrorLog: slog.NewLogLogger(logJSONHandler, slog.LevelError),
 		Handler:  router,
 	}
-	shutdownWg := &sync.WaitGroup{}
-	shutdownWg.Add(2)
-
-	func ()  {
-		defer shutdownWg.Done()
-		signals := make(chan os.Signal, 1)
-		signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
-		select{
-		case <-signals:
-			cancel()
-		case <-ctx.Done(): 
+	GracefulCloser := internal.NewGracefulCloser()
+	GracefulCloser.Add(func() error {
+		logger.Info("closing db connection")
+		if err := db.Close(); err != nil {
+			logger.Error(
+				"error closing db connection",
+				slog.String("err", err.Error()),
+			)
+			return err
 		}
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Second * 5)
+		logger.Info("db connection closed successfully")
+		return nil
+	})
+	GracefulCloser.Add(func() error {
+		logger.Info("shutting down HTTP server")
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
-
-		err := httpServer.Shutdown(shutdownCtx)
-		if err != nil {
-			logger.Error("can not shutdown http server")
+		if err := httpServer.Shutdown(ctx); err != nil {
+			logger.Error(
+				"error shutting down HTTP server",
+				slog.String("err", err.Error()),
+			)
+			return err
 		}
-		
-		err = db.Close()
-		if err != nil {
-
-		}
+		logger.Info("HTTP server shut down successfully")
+		return nil
+	})
+	sutdownCtx, shutdownCancel := context.WithCancel(ctx)
+	defer shutdownCancel()
+	go func() {
+		ctx, cancel := context.WithCancel(sutdownCtx)
+		defer cancel()
+		GracefulCloser.Run(ctx, logger)
+		os.Exit(1)
 	}()
 	logger.Info("application started", slog.String("port", apiPort))
 	if err := httpServer.ListenAndServe(); err != nil {
 		logger.Error("failed to start server", slog.String("err", err.Error()))
 	}
+	logger.Info("graceful shutdown complete", slog.String("port", apiPort))
 }
-
 
 //TODO: gracefull shutdow сделать
