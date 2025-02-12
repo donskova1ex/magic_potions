@@ -13,17 +13,35 @@ import (
 	"github.com/lib/pq"
 )
 
-func (r *Repository) createIngredients(ctx context.Context, tx *sqlx.Tx, ingredients []*domain.Ingredient) ([]*domain.Ingredient, error) {
-	//INSERT INTO ingredients (name, uuid) values ('ground', '1'), ('salt', '2'), ('chicken', '3') on conflict on constraint ingredients_name_key do update set name=excluded.name returning id;
+func (r *Repository) createIngredientsTx(ctx context.Context, tx *sqlx.Tx, ingredients []*domain.Ingredient) (map[string]int32, error) {
+
 	query := `
 	INSERT INTO ingredients (name, uuid) 
-	values (:name, gen_random_uuid()) 
+	values (:name, :uuid) 
 	on conflict on constraint ingredients_name_key 
 	do update set name=excluded.name 
 	returning id, name;
 	`
-	tx.NamedExecContext(ctx, query, ingredients)
+	rows, err := tx.NamedQuery(query, ingredients)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query ingredients: %w", err)
+	}
 
+	if rows.Err() != nil {
+		return nil, fmt.Errorf("failed to reading rows: %w", err)
+	}
+
+	ingredientsMap := make(map[string]int32)
+	var id int32
+	var name string
+	for rows.Next() {
+		if err := rows.Scan(&id, &name); err != nil {
+			return nil, fmt.Errorf("failed scan ingredient values: %w", err)
+		}
+		ingredientsMap[name] = id
+	}
+
+	return ingredientsMap, nil
 }
 
 func (r *Repository) CreateIngredient(ctx context.Context, ingredient *domain.Ingredient) (*domain.Ingredient, error) {

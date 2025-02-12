@@ -27,12 +27,14 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*
 			return
 		}
 	}()
-
-	ingredients, err := r.CreateIngredients(ctx, tx, recipe.Ingredients)
-	if err != nil {
-		return nil, fmt.Errorf("error creating ingredients from recipe: %w", internal.ErrCreateIngredientsByRecipe)
+	for _, ingredient := range recipe.Ingredients {
+		ingredient.UUID = uuid.NewString()
 	}
-	newRecipe, err := r.createRecipe(ctx, tx, recipe, ingredients)
+	ingredients, err := r.createIngredientsTx(ctx, tx, recipe.Ingredients)
+	if err != nil {
+		return nil, fmt.Errorf("error creating ingredients from recipe: %w", err)
+	}
+	newRecipe, err := r.createRecipe(ctx, tx, recipe)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new recipe: %w", internal.ErrCreateRecipe)
 	}
@@ -44,12 +46,11 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*
 	return newRecipe, nil
 }
 
-func (r *Repository) createRecipe(ctx context.Context, tx *sqlx.Tx, recipe *domain.Recipe, ingredients []*domain.Ingredient) (*domain.Recipe, error) {
+func (r *Repository) createRecipeTx(ctx context.Context, tx *sqlx.Tx, recipe *domain.Recipe) (*domain.Recipe, error) {
 	var id uint32
-
+	newUUID := uuid.NewString()
 	query := `INSERT INTO recipes (uuid, Name, BrewTimeSeconds) values ($1, $2, $3) 
 				on conflict on constraint recipes_name_key RETURNING id`
-	newUUID := uuid.NewString()
 
 	row := tx.QueryRowContext(ctx, query, newUUID, recipe.Name, recipe.BrewTimeSeconds)
 	err := row.Err()
@@ -64,10 +65,9 @@ func (r *Repository) createRecipe(ctx context.Context, tx *sqlx.Tx, recipe *doma
 		UUID:            newUUID,
 		Name:            recipe.Name,
 		BrewTimeSeconds: recipe.BrewTimeSeconds,
-		Ingredients:     ingredients,
 	}
 
-	return newRecipe, nil
+	return newRecipe.ID, nil
 }
 
 func (r *Repository) RecipesAll(ctx context.Context) ([]*domain.Recipe, error) {
