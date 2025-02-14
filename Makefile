@@ -5,13 +5,13 @@ DEV_COMPOSE_ENV=docker compose $(DEV_COMPOSE_ARGS)
 DEV_COMPOSE=docker compose $(DEV_COMPOSE_ARGS)
 
 dev-build:
-	$(DEV_COMPOSE) build
+	$(DEV_COMPOSE) build --no-cache
 
 dev-up: api_docker_build consumer_docker_build dev-build
 	$(DEV_COMPOSE) up -d
 
 dev-up-env: dev-build
-	$(DEV_COMPOSE_ENV) up -d
+	$(DEV_COMPOSE_ENV) up -d 
 
 dev-down:
 	$(DEV_COMPOSE) down
@@ -33,3 +33,6 @@ build-kafka:
 
 build-zookeeper:
 	docker build -t zookeeper-jmx -f Dockerfile.zookeeper .
+
+dev-db-login:
+	psql "postgres://dev:dev1234@localhost:5432/dev?sslmode=disable"

@@ -29,7 +29,7 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*
 		ingredient.UUID = uuid.NewString()
 	}
 
-	ingredientsMap, err := r.createIngredientsTx(tx, recipe.Ingredients)
+	savedIngredients, err := r.createIngredientsTx(tx, recipe.Ingredients)
 	if err != nil {
 		return nil, fmt.Errorf("error creating ingredients from recipe: %w", err)
 	}
@@ -39,15 +39,15 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*
 		return nil, fmt.Errorf("error creating new recipe: %w", internal.ErrCreateRecipe)
 	}
 
-	ingredients, err := saveRecipesToIngredients(tx, newRecipe.ID, recipe.Ingredients, ingredientsMap)
-	if err != nil {
+	if err := saveRecipesToIngredients(tx, newRecipe.ID, savedIngredients); err != nil {
 		return nil, fmt.Errorf("error saving recipe ingredients: %w", err)
 	}
 
-	newRecipe.Ingredients = ingredients
 	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("error committing transaction: %w", internal.ErrRecipeTransaction)
 	}
+
+	newRecipe.Ingredients = savedIngredients
 
 	return newRecipe, nil
 }
@@ -55,10 +55,11 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*
 func (r *Repository) createRecipeTx(ctx context.Context, tx *sqlx.Tx, recipe *domain.Recipe) (*domain.Recipe, error) {
 	var id int32
 	newUUID := uuid.NewString()
-	query := `INSERT INTO recipes (uuid, Name, BrewTimeSeconds) values ($1, $2, $3) 
-				on conflict on constraint recipes_name_key RETURNING id`
-	row := tx.QueryRowxContext(ctx, query, newUUID, recipe.Name)
+	//TODO: Upper case in query
+	query := `INSERT INTO RECIPES (uuid, name, brew_time_seconds) VALUES ($1, $2, $3) 
+				ON CONFLICT ON CONSTRAINT DO NOTHING recipes_name_key RETURNING id`
 
+	row := tx.QueryRowxContext(ctx, query, newUUID, recipe.Name)
 	if row.Err() != nil {
 		return nil, fmt.Errorf("error query with name %s: %w", recipe.Name, row.Err())
 	}
@@ -136,48 +137,37 @@ func saveRecipesToIngredients(
 	tx *sqlx.Tx,
 	recipeId int32,
 	ingredients []*domain.Ingredient,
-	ingredientsMap map[string]int32) ([]*domain.Ingredient, error) {
+) error {
 
-	var createdIngredients []*domain.Ingredient
 	var queryParameters []map[string]interface{}
 
 	for _, ingredient := range ingredients {
-		ingredientID, exists := ingredientsMap[ingredient.Name]
-		if !exists {
-			return nil, fmt.Errorf("ingredient [%s] does not exist", ingredient.Name)
-		}
-
 		queryParameters = append(queryParameters, map[string]interface{}{
 			"recipe_id":     recipeId,
-			"ingredient_id": ingredientID,
+			"ingredient_id": ingredient.ID,
 			"quantity":      ingredient.Quantity,
 		})
 	}
+	deleteQuery := `
+	DELETE FROM ingredients 
+	WHERE 
+		recipe_id=$1 AND 
+		ingredient_id <> ANY(:ingredient_id)`
 
-	if len(queryParameters) == 0 {
-		return createdIngredients, nil
-	}
-
-	query := `INSERT into recipes_to_ingredients (recipe_id, ingredient_id, quantity) 
-				values (:recipe_id, :ingredient_id, :quantity)
-				on conflict on constraint do nothing`
-
-	_, err := tx.NamedExec(query, queryParameters)
-
+	_, err := tx.NamedExec(deleteQuery, queryParameters)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query recipe ingredients: %w", err)
+		return fmt.Errorf("failed to delete old recipe ingredients: %w", err)
 	}
 
-	for _, ingredient := range ingredients {
-		id, exists := ingredientsMap[ingredient.Name]
-		if exists {
-			createdIngredients = append(createdIngredients, &domain.Ingredient{
-				ID:       id,
-				UUID:     ingredient.UUID,
-				Name:     ingredient.Name,
-				Quantity: ingredient.Quantity,
-			})
-		}
+	query := `
+	INSERT INTO recipes_to_ingredients (recipe_id, ingredient_id, quantity) 
+	VALUES (:recipe_id, :ingredient_id, :quantity)
+	ON CONFLICT ON CONSTRAINT _ DO NOTHING`
+
+	_, err = tx.NamedExec(query, queryParameters)
+	if err != nil {
+		return fmt.Errorf("failed to query recipe ingredients: %w", err)
 	}
-	return createdIngredients, nil
+
+	return nil
 }

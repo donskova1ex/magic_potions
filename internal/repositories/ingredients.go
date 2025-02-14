@@ -13,8 +13,7 @@ import (
 	"github.com/lib/pq"
 )
 
-func (r *Repository) createIngredientsTx(tx *sqlx.Tx, ingredients []*domain.Ingredient) (map[string]int32, error) {
-
+func (r *Repository) createIngredientsTx(tx *sqlx.Tx, ingredients []*domain.Ingredient) ([]*domain.Ingredient, error) {
 	query := `
 	INSERT INTO ingredients (name, uuid) 
 	values (:name, :uuid) 
@@ -39,9 +38,21 @@ func (r *Repository) createIngredientsTx(tx *sqlx.Tx, ingredients []*domain.Ingr
 			return nil, fmt.Errorf("failed scan ingredient values: %w", err)
 		}
 		ingredientsMap[name] = id
+
 	}
 
-	return ingredientsMap, nil
+	savedIngredients := make([]*domain.Ingredient, 0, len(ingredients))
+	for _, i := range ingredients {
+		savedIngredients = append(savedIngredients, &domain.Ingredient{
+			ID:       ingredientsMap[i.Name],
+			UUID:     i.UUID,
+			Name:     i.Name,
+			Quantity: i.Quantity,
+		})
+
+	}
+
+	return savedIngredients, nil
 }
 
 func (r *Repository) CreateIngredient(ctx context.Context, ingredient *domain.Ingredient) (*domain.Ingredient, error) {
