@@ -4,7 +4,7 @@ import (
 	"errors"
 )
 
-var ErrNotDelete = errors.New("ent not delete")
+var ErrNotDelete = errors.New("entity not delete")
 var ErrNotFound = errors.New("entity not found")
 var ErrGetByUUID = errors.New("entity not found")
 var ErrReadRows = errors.New("can not read rows")
