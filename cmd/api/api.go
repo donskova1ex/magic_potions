@@ -115,5 +115,3 @@ func main() {
 	}
 	logger.Info("graceful shutdown complete", slog.String("port", apiPort))
 }
-
-//TODO: gracefull shutdow сделать
