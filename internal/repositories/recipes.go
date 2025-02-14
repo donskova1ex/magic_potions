@@ -20,7 +20,6 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*
 	if err != nil {
 		return nil, fmt.Errorf("error start transaction: %w", internal.ErrRecipeTransaction)
 	}
-	//TODO:
 	defer func() {
 		if err := tx.Rollback(); err != nil {
 			r.logger.Error("error rollbacking transaction", slog.String("err", err.Error()))
@@ -30,15 +29,23 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*
 	for _, ingredient := range recipe.Ingredients {
 		ingredient.UUID = uuid.NewString()
 	}
-	ingredients, err := r.createIngredientsTx(ctx, tx, recipe.Ingredients)
+
+	ingredientsMap, err := r.createIngredientsTx(ctx, tx, recipe.Ingredients)
 	if err != nil {
 		return nil, fmt.Errorf("error creating ingredients from recipe: %w", err)
 	}
-	newRecipe, err := r.createRecipe(ctx, tx, recipe)
+
+	newRecipe, err := r.createRecipeTx(ctx, tx, recipe)
 	if err != nil {
 		return nil, fmt.Errorf("error creating new recipe: %w", internal.ErrCreateRecipe)
 	}
 
+	ingredients, err := saveRecipesToIngredients(tx, newRecipe.ID, recipe.Ingredients, ingredientsMap)
+	if err != nil {
+		return nil, fmt.Errorf("error saving recipe ingredients: %w", err)
+	}
+
+	newRecipe.Ingredients = ingredients
 	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("error committing transaction: %w", internal.ErrRecipeTransaction)
 	}
@@ -47,27 +54,30 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*
 }
 
 func (r *Repository) createRecipeTx(ctx context.Context, tx *sqlx.Tx, recipe *domain.Recipe) (*domain.Recipe, error) {
-	var id uint32
+	var id int32
 	newUUID := uuid.NewString()
 	query := `INSERT INTO recipes (uuid, Name, BrewTimeSeconds) values ($1, $2, $3) 
 				on conflict on constraint recipes_name_key RETURNING id`
+	row := tx.QueryRowxContext(ctx, query, newUUID, recipe.Name)
 
-	row := tx.QueryRowContext(ctx, query, newUUID, recipe.Name, recipe.BrewTimeSeconds)
-	err := row.Err()
-	if err != nil {
-		return nil, fmt.Errorf("can not read recipe from db: %w", err)
+	if row.Err() != nil {
+		return nil, fmt.Errorf("error query with name %s: %w", recipe.Name, row.Err())
 	}
+
 	if err := row.Scan(&id); err != nil {
-		return nil, fmt.Errorf("can not scan recipe for id: %w", err)
+		return nil, fmt.Errorf("error scanning id from row: %w", err)
 	}
 
 	newRecipe := &domain.Recipe{
+		ID:              id,
 		UUID:            newUUID,
 		Name:            recipe.Name,
 		BrewTimeSeconds: recipe.BrewTimeSeconds,
+		Ingredients:     nil,
 	}
 
-	return newRecipe.ID, nil
+	return newRecipe, nil
+
 }
 
 func (r *Repository) RecipesAll(ctx context.Context) ([]*domain.Recipe, error) {
@@ -123,10 +133,39 @@ func (r *Repository) UpdateRecipeByUUID(ctx context.Context, recipe *domain.Reci
 	return recipe, nil
 }
 
-func saveRecipesToIngredients(ctx context.Context, tx *sql.Tx, recipeId string, ingredients []*domain.Ingredient) error {
+func saveRecipesToIngredients(
+	tx *sqlx.Tx,
+	recipeId int32,
+	ingredients []*domain.Ingredient,
+	ingredientsMap map[string]int32) ([]*domain.Ingredient, error) {
 
-	// for _, ingredient := range ingredients {
-	// 	query := `INSERT into recipes_to_ingredients (recipe_id, ingredient_id, quatity) values($1, $2, $3)`
-	// }
-	return nil
+	var createdIngredients []*domain.Ingredient
+
+	for _, ingredient := range ingredients {
+		ingredientID, exists := ingredientsMap[ingredient.Name]
+		if !exists {
+			return nil, fmt.Errorf("ingredient [%s] does not exist", ingredient.Name)
+		}
+
+		query := `INSERT into recipes_to_ingredients (recipe_id, ingredient_id, quantity) 
+				values (:recipe_id, :ingredient_id, :quantity)
+				on conflict on constraint do nothing`
+		queryParams := map[string]interface{}{
+			"recipe_id":     recipeId,
+			"ingredient_id": ingredientID,
+			"quantity":      ingredient.Quantity,
+		}
+		_, err := tx.NamedExec(query, queryParams)
+		if err != nil {
+			return nil, fmt.Errorf("failed to query recipe ingredients: %w", err)
+		}
+		createdIngredient := &domain.Ingredient{
+			ID:       ingredientID,
+			UUID:     ingredient.UUID,
+			Name:     ingredient.Name,
+			Quantity: ingredient.Quantity,
+		}
+		createdIngredients = append(createdIngredients, createdIngredient)
+	}
+	return createdIngredients, nil
 }

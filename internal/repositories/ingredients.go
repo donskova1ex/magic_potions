@@ -28,7 +28,7 @@ func (r *Repository) createIngredientsTx(ctx context.Context, tx *sqlx.Tx, ingre
 	}
 
 	if rows.Err() != nil {
-		return nil, fmt.Errorf("failed to reading rows: %w", err)
+		return nil, fmt.Errorf("failed to reading rows: %w", rows.Err())
 	}
 
 	ingredientsMap := make(map[string]int32)
