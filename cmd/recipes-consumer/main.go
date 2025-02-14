@@ -15,7 +15,8 @@ import (
 )
 
 func main() {
-
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	logJSONHandler := slog.NewJSONHandler(os.Stdout, nil)
 	logger := slog.New(logJSONHandler)
 	logger.Info("application started")
@@ -32,7 +33,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := repositories.NewPostgresDB(pgDSN)
+	db, err := repositories.NewPostgresDB(ctx, pgDSN)
 	if err != nil {
 		logger.Error("can not create postgres db connection", slog.String("error", err.Error()))
 		return

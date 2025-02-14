@@ -13,7 +13,7 @@ import (
 	"github.com/lib/pq"
 )
 
-func (r *Repository) createIngredientsTx(ctx context.Context, tx *sqlx.Tx, ingredients []*domain.Ingredient) (map[string]int32, error) {
+func (r *Repository) createIngredientsTx(tx *sqlx.Tx, ingredients []*domain.Ingredient) (map[string]int32, error) {
 
 	query := `
 	INSERT INTO ingredients (name, uuid) 

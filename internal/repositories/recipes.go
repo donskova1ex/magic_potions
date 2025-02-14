@@ -29,7 +29,7 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*
 		ingredient.UUID = uuid.NewString()
 	}
 
-	ingredientsMap, err := r.createIngredientsTx(ctx, tx, recipe.Ingredients)
+	ingredientsMap, err := r.createIngredientsTx(tx, recipe.Ingredients)
 	if err != nil {
 		return nil, fmt.Errorf("error creating ingredients from recipe: %w", err)
 	}
