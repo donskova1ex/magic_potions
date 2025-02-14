@@ -139,6 +139,7 @@ func saveRecipesToIngredients(
 	ingredientsMap map[string]int32) ([]*domain.Ingredient, error) {
 
 	var createdIngredients []*domain.Ingredient
+	var queryParameters []map[string]interface{}
 
 	for _, ingredient := range ingredients {
 		ingredientID, exists := ingredientsMap[ingredient.Name]
@@ -146,25 +147,38 @@ func saveRecipesToIngredients(
 			return nil, fmt.Errorf("ingredient [%s] does not exist", ingredient.Name)
 		}
 
-		query := `INSERT into recipes_to_ingredients (recipe_id, ingredient_id, quantity) 
-				values (:recipe_id, :ingredient_id, :quantity)
-				on conflict on constraint do nothing`
-		queryParams := map[string]interface{}{
+		queryParameters = append(queryParameters, map[string]interface{}{
 			"recipe_id":     recipeId,
 			"ingredient_id": ingredientID,
 			"quantity":      ingredient.Quantity,
-		}
-		_, err := tx.NamedExec(query, queryParams)
-		if err != nil {
-			return nil, fmt.Errorf("failed to query recipe ingredients: %w", err)
-		}
-		createdIngredient := &domain.Ingredient{
-			ID:       ingredientID,
-			UUID:     ingredient.UUID,
-			Name:     ingredient.Name,
-			Quantity: ingredient.Quantity,
-		}
-		createdIngredients = append(createdIngredients, createdIngredient)
+		})
 	}
+
+	if len(queryParameters) == 0 {
+		return createdIngredients, nil
+	}
+
+	query := `INSERT into recipes_to_ingredients (recipe_id, ingredient_id, quantity) 
+				values (:recipe_id, :ingredient_id, :quantity)
+				on conflict on constraint do nothing`
+
+	_, err := tx.NamedExec(query, queryParameters)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to query recipe ingredients: %w", err)
+	}
+
+	for _, ingredient := range ingredients {
+		id, exists := ingredientsMap[ingredient.Name]
+		if exists {
+			createdIngredients = append(createdIngredients, &domain.Ingredient{
+				ID:       id,
+				UUID:     ingredient.UUID,
+				Name:     ingredient.Name,
+				Quantity: ingredient.Quantity,
+			})
+		}
+	}
+
 	return createdIngredients, nil
 }
