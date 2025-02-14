@@ -13,7 +13,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// TODO: проверить транзакции, если норм, то сделать аналогично во все запросы
 func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*domain.Recipe, error) {
 	tx, err := r.db.BeginTxx(ctx, nil)
 
@@ -22,7 +21,7 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*
 	}
 	defer func() {
 		if err := tx.Rollback(); err != nil {
-			r.logger.Error("error rollbacking transaction", slog.String("err", err.Error()))
+			r.logger.Error("error roll back transaction", slog.String("err", err.Error()))
 			return
 		}
 	}()
