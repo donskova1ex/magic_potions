@@ -8,7 +8,7 @@ dev-build:
 	$(DEV_COMPOSE) build --no-cache
 
 dev-up: api_docker_build consumer_docker_build dev-build
-	$(DEV_COMPOSE) up -d
+	$(DEV_COMPOSE) up -d --no-deps --build
 
 dev-up-env: dev-build
 	$(DEV_COMPOSE_ENV) up -d 
@@ -20,10 +20,10 @@ dev-logs:
 	docker compose -f docker-compose.dev.yaml logs
 
 dev-migrate-up:
-	docker-compose -f docker-compose.dev.yaml up -d migrations-up
+	$(DEV_COMPOSE) up -d migrations-up
 
 dev-migrate-down:
-	docker compose --profile migrations-down -f docker-compose.dev.yaml up -d migrations-down
+	$(DEV_COMPOSE) --profile migrations-down up -d migrations-down
 
 dev-api-run:
 	go run cmd/api/api.go
