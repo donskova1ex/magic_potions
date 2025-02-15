@@ -9,7 +9,7 @@ consumer_local_build:
 
 # docker
 consumer_docker_build:
-	docker build -t ${CONSUMER_CONTAINER_NAME}:${API_VERSION} -t ${CONSUMER_CONTAINER_NAME}:latest -f Dockerfile.consumer .
+	docker build -t ${CONSUMER_CONTAINER_NAME}:${CONSUMER_VERSION} -t ${CONSUMER_CONTAINER_NAME}:latest -f Dockerfile.consumer .
 consumer_docker_push:
 	docker push ${CONSUMER_CONTAINER_NAME}:${CONSUMER_VERSION}
 	docker push ${CONSUMER_CONTAINER_NAME}:latest
