@@ -36,7 +36,7 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*
 
 	newRecipe, err := r.createRecipeTx(ctx, tx, recipe)
 	if err != nil {
-		return nil, fmt.Errorf("error creating new recipe: %w", internal.ErrCreateRecipe)
+		return nil, fmt.Errorf("error creating new recipe: %w", err)
 	}
 
 	if err := saveRecipesToIngredients(tx, newRecipe.ID, savedIngredients); err != nil {
@@ -44,7 +44,7 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, fmt.Errorf("error committing transaction: %w", internal.ErrRecipeTransaction)
+		return nil, fmt.Errorf("error committing transaction: %w", err)
 	}
 
 	newRecipe.Ingredients = savedIngredients
@@ -56,12 +56,12 @@ func (r *Repository) createRecipeTx(ctx context.Context, tx *sqlx.Tx, recipe *do
 	var id int32
 	newUUID := uuid.NewString()
 	//TODO: Upper case in query
-	query := `INSERT INTO RECIPES (uuid, name, brew_time_seconds) VALUES ($1, $2, $3) 
-				ON CONFLICT ON CONSTRAINT DO NOTHING recipes_name_key RETURNING id`
+	query := `INSERT INTO recipes (uuid, name, brew_time_seconds) VALUES ($1, $2, $3) 
+				ON CONFLICT ON CONSTRAINT recipes_name_key DO NOTHING RETURNING id`
 
-	row := tx.QueryRowxContext(ctx, query, newUUID, recipe.Name)
+	row := tx.QueryRowxContext(ctx, query, newUUID, recipe.Name, recipe.BrewTimeSeconds)
 	if row.Err() != nil {
-		return nil, fmt.Errorf("error query with name %s: %w", recipe.Name, row.Err())
+		return nil, fmt.Errorf("error query with name [%s]: %w", recipe.Name, row.Err())
 	}
 
 	if err := row.Scan(&id); err != nil {
@@ -98,28 +98,20 @@ func (r *Repository) RecipeByUUID(ctx context.Context, uuid string) (*domain.Rec
 	query := "SELECT uuid, name, brew_time_seconds FROM recipes WHERE uuid = $1"
 	err := r.db.GetContext(ctx, recipe, query, uuid)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, fmt.Errorf("%w with uuid [%s]", internal.ErrNotFound, uuid)
+		return nil, fmt.Errorf("err getting recipe with uuid [%s]: %w", uuid, err)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("%w by uuid: [%s]", internal.ErrReadRows, uuid)
+		return nil, fmt.Errorf("err getting recipe with uuid [%s]: %w", uuid, err)
 	}
 	return recipe, nil
 }
 
 func (r *Repository) DeleteRecipeByUUID(ctx context.Context, uuid string) error {
-	result, err := r.db.ExecContext(ctx, "DELETE FROM recipes WHERE uuid = $1", uuid)
-
+	_, err := r.db.ExecContext(ctx, "DELETE FROM recipes WHERE uuid = $1", uuid)
 	if err != nil {
-		return fmt.Errorf("%w with uuid [%s]", internal.ErrGetByUUID, uuid)
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("%w with uuid [%s]", internal.ErrReadRows, uuid)
+		return fmt.Errorf("error delete recipe with uuid [%s]: %w", uuid, err)
 	}
 
-	if rows != 1 {
-		return fmt.Errorf("%w with uuid [%s]", internal.ErrNotDelete, uuid)
-	}
 	return nil
 }
 
@@ -160,9 +152,11 @@ func saveRecipesToIngredients(
 	}
 
 	query := `
-	INSERT INTO recipes_to_ingredients (recipe_id, ingredient_id, quantity) 
+	INSERT INTO recipes_to_ingredients rti (recipe_id, ingredient_id, quantity) 
 	VALUES (:recipe_id, :ingredient_id, :quantity)
-	ON CONFLICT ON CONSTRAINT _ DO NOTHING`
+	ON CONFLICT ON CONSTRAINT recipes_to_ingredients_pkey 
+	DO UPDATE SET 
+		rti.quantity = EXCLUDED.quantity`
 
 	_, err = tx.NamedExec(query, queryParameters)
 	if err != nil {

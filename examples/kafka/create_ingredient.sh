@@ -1,0 +1,1 @@
+echo '{"name":"recipe1","brew_time_seconds":1,"ingredients":[{"name":"1","quantity":15},{"name":"2","quantity":20}]}' | kcat -P -b 127.0.0.1:19092 -t create_recipes.v1

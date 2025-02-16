@@ -127,8 +127,11 @@ services:
     environment:
       - KAFKA_BROKERS=${KAFKA_BROKERS}
       - POSTGRES_DSN=${POSTGRES_DSN}
-    image: donskova1ex/recipes-consumer:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
     depends_on:
       - kafka1
       - kafka2
       - kafka3
+

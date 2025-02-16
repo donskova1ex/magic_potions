@@ -36,13 +36,9 @@ func (c *RecipesConsumer) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 				log.Println("Consumer kafka messages chan closed")
 				return nil
 			}
-			log.Printf("Consumer kafka message: %s\n", string(message.Value))
-			// if err := c.saver.Save(session.Context(), message.Value); err != nil {
-
-			// }
-			//saving message прокинуть процессор проверка на корректность обработки.
-			//Будет пытаться вычитать до бесконечности, пока сообщение не будет вычитано
-			//retry  при вычитвании сообщения.
+			if err := c.saver.Save(session.Context(), message.Key, message.Value, message.Timestamp); err != nil {
+				return err
+			}
 			session.MarkMessage(message, "read")
 			session.Commit()
 		case <-session.Context().Done():

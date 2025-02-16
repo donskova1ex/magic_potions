@@ -87,10 +87,9 @@ func (rec *recipes) UpdateRecipeByID(ctx context.Context, recipe *domain.Recipe)
 	return r, nil
 }
 
-// TODO base insert
+// TODO вынести в отдельную функцию конверт анмаршла в домаин структуры
 func (rec *recipes) Save(ctx context.Context, key []byte, body []byte, timeStamp time.Time) error {
-	//TODO: Контракт на количество ингредиентов в рецепте {name:water, quantity:6}
-
+	//TODO: валидация структур
 	recipe := &consumers.Recipe{}
 	if err := json.Unmarshal(body, recipe); err != nil {
 		rec.log.Error(
@@ -100,7 +99,25 @@ func (rec *recipes) Save(ctx context.Context, key []byte, body []byte, timeStamp
 		)
 		return nil
 	}
-	fmt.Printf("recipe: %+v\n", recipe)
+	domainRecipe := &domain.Recipe{
+		Name:            recipe.Name,
+		BrewTimeSeconds: recipe.BrewTimeSeconds,
+	}
+	domainIngredients := []*domain.Ingredient{}
+	for _, ingredient := range recipe.Ingredients {
+		domainIngredients = append(domainIngredients, &domain.Ingredient{
+			Name:     ingredient.Name,
+			Quantity: ingredient.Quantity,
+		})
+	}
+	domainRecipe.Ingredients = domainIngredients
+
+	/*TODO: creating retry (повторение сохранения 3-5 раз, если сообщение так и не вычиталось, писать в логи).
+	RetryStruct и методы по ретраю*/
+	_, err := rec.CreateRecipe(ctx, domainRecipe)
+	if err != nil {
+		return fmt.Errorf("failed to greate recipe: %w", err)
+	}
 
 	return nil
 }
