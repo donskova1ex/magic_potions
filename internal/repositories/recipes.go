@@ -11,6 +11,7 @@ import (
 	"github.com/donskova1ex/magic_potions/internal/domain"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*domain.Recipe, error) {
@@ -158,9 +159,9 @@ func saveRecipesToIngredients(
     DELETE FROM recipes_to_ingredients 
     WHERE 
         recipe_id = $1 AND 
-        ingredient_id != ANY($2)`
+        ingredient_id != ALL($2)`
 
-	_, err := tx.Exec(deleteQuery, recipeId, ingredientIDs)
+	_, err := tx.Exec(deleteQuery, recipeId, pq.Array(ingredientIDs))
 	if err != nil {
 		return fmt.Errorf("failed to delete old recipe ingredients: %w", err)
 	}
