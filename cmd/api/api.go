@@ -11,6 +11,7 @@ import (
 	"github.com/donskova1ex/magic_potions/internal"
 	"github.com/donskova1ex/magic_potions/internal/processors"
 	"github.com/donskova1ex/magic_potions/internal/repositories"
+	"github.com/joho/godotenv"
 
 	openapi "github.com/donskova1ex/magic_potions/openapi"
 )
@@ -25,6 +26,10 @@ func main() {
 
 	slog.SetDefault(logger)
 
+	err := godotenv.Load(".env.local")
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 	pgDSN := os.Getenv("POSTGRES_DSN")
 	if pgDSN == "" {
 		logger.Error("empty POSTGRES_DSN")
