@@ -185,7 +185,7 @@ func (r *Repository) getRecipeByNameTx(ctx context.Context, tx *sqlx.Tx, name st
 	var recipe *domain.Recipe
 
 	query := `SELECT id, uuid, name, brew_time_seconds FROM recipes WHERE name = $1`
-	err := tx.GetContext(ctx, &recipe, query, name)
+	err := tx.SelectContext(ctx, &recipe, query, name)
 	if err != nil {
 		if errors.Is(sql.ErrNoRows, err) {
 			return nil, fmt.Errorf("recipe with name [%s] not found: %w", name, err)
