@@ -65,7 +65,7 @@ func (r *Repository) createRecipeTx(ctx context.Context, tx *sqlx.Tx, recipe *do
 	query := `
         INSERT INTO recipes (uuid, name, brew_time_seconds) VALUES ($1, $2, $3) 
         ON CONFLICT ON CONSTRAINT recipes_name_key 
-        DO UPDATE SET uuid = EXCLUDED.uuid, brew_time_seconds = EXCLUDED.brew_time_seconds
+        DO UPDATE SET brew_time_seconds = EXCLUDED.brew_time_seconds
         RETURNING id`
 
 	row := tx.QueryRowxContext(ctx, query, newUUID, recipe.Name, recipe.BrewTimeSeconds)
