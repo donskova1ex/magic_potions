@@ -6,3 +6,5 @@ bin/
 .idea/modules.xml
 .idea/.gitignore
 /.idea/material_theme_project_new.xml
+.idea/magic_potions.iml
+.gitignore

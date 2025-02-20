@@ -70,6 +70,7 @@ func main() {
 		ErrorLog: slog.NewLogLogger(logJSONHandler, slog.LevelError),
 		Handler:  router,
 	}
+
 	GracefulCloser := internal.NewGracefulCloser()
 	GracefulCloser.Add(func() error {
 		logger.Info("closing db connection")
@@ -83,6 +84,7 @@ func main() {
 		logger.Info("db connection closed successfully")
 		return nil
 	})
+
 	GracefulCloser.Add(func() error {
 		logger.Info("shutting down HTTP server")
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -105,9 +107,12 @@ func main() {
 		GracefulCloser.Run(ctx, logger)
 		os.Exit(1)
 	}()
+
 	logger.Info("application started", slog.String("port", apiPort))
+
 	if err := httpServer.ListenAndServe(); err != nil {
 		logger.Error("failed to start server", slog.String("err", err.Error()))
 	}
+
 	logger.Info("graceful shutdown complete", slog.String("port", apiPort))
 }
