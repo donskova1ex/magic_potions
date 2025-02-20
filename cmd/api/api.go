@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/donskova1ex/magic_potions/internal/middleware"
+	"github.com/donskova1ex/magic_potions/internal/routers"
 	"log"
 	"log/slog"
 	"net/http"
@@ -63,7 +65,9 @@ func main() {
 	WitchAPIService := openapi.NewWitchAPIService(witchProcessor, logger)
 	WitchAPIController := openapi.NewWitchAPIController(WitchAPIService)
 
-	router := openapi.NewRouter(IngredientAPIController, RecipeAPIController, WitchAPIController)
+	//router := openapi.NewRouter(IngredientAPIController, RecipeAPIController, WitchAPIController)
+	router := routers.NewMuxRouter(IngredientAPIController, RecipeAPIController, WitchAPIController)
+	router.Use(middleware.RequestIDMiddleware(logger))
 
 	httpServer := http.Server{
 		Addr:     ":" + apiPort,
