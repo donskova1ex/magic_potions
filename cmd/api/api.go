@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"github.com/donskova1ex/magic_potions/internal/middleware"
-	"github.com/donskova1ex/magic_potions/internal/routers"
 	"log"
 	"log/slog"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/donskova1ex/magic_potions/internal/middleware"
 
 	"github.com/donskova1ex/magic_potions/internal"
 	"github.com/donskova1ex/magic_potions/internal/processors"
@@ -65,9 +65,9 @@ func main() {
 	WitchAPIService := openapi.NewWitchAPIService(witchProcessor, logger)
 	WitchAPIController := openapi.NewWitchAPIController(WitchAPIService)
 
-	//router := openapi.NewRouter(IngredientAPIController, RecipeAPIController, WitchAPIController)
-	router := routers.NewMuxRouter(IngredientAPIController, RecipeAPIController, WitchAPIController)
-	router.Use(middleware.RequestIDMiddleware(logger))
+	router := openapi.NewRouter(IngredientAPIController, RecipeAPIController, WitchAPIController)
+	requestLogger := middleware.RequestLogger(logger)
+	router.Use(middleware.RequestIDMiddleware, requestLogger)
 
 	httpServer := http.Server{
 		Addr:     ":" + apiPort,
@@ -75,8 +75,8 @@ func main() {
 		Handler:  router,
 	}
 
-	GracefulCloser := internal.NewGracefulCloser()
-	GracefulCloser.Add(func() error {
+	gracefulCloser := internal.NewGracefulCloser()
+	gracefulCloser.Add(func() error {
 		logger.Info("closing db connection")
 		if err := db.Close(); err != nil {
 			logger.Error(
@@ -89,7 +89,7 @@ func main() {
 		return nil
 	})
 
-	GracefulCloser.Add(func() error {
+	gracefulCloser.Add(func() error {
 		logger.Info("shutting down HTTP server")
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
@@ -108,7 +108,7 @@ func main() {
 	go func() {
 		ctx, cancel := context.WithCancel(sutdownCtx)
 		defer cancel()
-		GracefulCloser.Run(ctx, logger)
+		gracefulCloser.Run(ctx, logger)
 		os.Exit(1)
 	}()
 
