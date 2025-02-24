@@ -74,7 +74,7 @@ func (r *Repository) createRecipeTx(ctx context.Context, tx *sqlx.Tx, recipe *do
 	}
 
 	if err := row.Scan(&id); err != nil {
-		if errors.Is(sql.ErrNoRows, err) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return r.getRecipeByNameTx(ctx, tx, recipe.Name)
 		}
 		return nil, fmt.Errorf("error scanning id from row: %w", err)
@@ -187,7 +187,7 @@ func (r *Repository) getRecipeByNameTx(ctx context.Context, tx *sqlx.Tx, name st
 	query := `SELECT id, uuid, name, brew_time_seconds FROM recipes WHERE name = $1`
 	err := tx.SelectContext(ctx, &recipe, query, name)
 	if err != nil {
-		if errors.Is(sql.ErrNoRows, err) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("recipe with name [%s] not found: %w", name, err)
 		}
 		return nil, fmt.Errorf("error getting recipe by name [%s]: %w", name, err)
