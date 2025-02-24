@@ -61,7 +61,7 @@ func (r *Repository) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*
 func (r *Repository) createRecipeTx(ctx context.Context, tx *sqlx.Tx, recipe *domain.Recipe) (*domain.Recipe, error) {
 	var id int32
 	newUUID := uuid.NewString()
-	//TODO: Upper case in query
+
 	query := `
         INSERT INTO recipes (uuid, name, brew_time_seconds) VALUES ($1, $2, $3) 
         ON CONFLICT ON CONSTRAINT recipes_name_key 
