@@ -14,7 +14,7 @@ func NewMetrics() *Metrics {
 	return &Metrics{
 		requestsTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "requests_total",
-			Help: "Number of incoming requets to API",
+			Help: "Number of incoming requests to API",
 		}, []string{"method", "status", "path"}),
 	}
 }
