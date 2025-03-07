@@ -26,3 +26,7 @@ func (m *Metrics) RequestsTotal(method string, status int, path string) {
 		"path":   path,
 	}).Inc()
 }
+
+//TODO: middleware который будет репортить
+
+//TODO: latecy

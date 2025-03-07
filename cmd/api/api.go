@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/donskova1ex/magic_potions/internal/middleware"
-
 	"github.com/donskova1ex/magic_potions/internal"
+	"github.com/donskova1ex/magic_potions/internal/metrics"
+	"github.com/donskova1ex/magic_potions/internal/middleware"
 	"github.com/donskova1ex/magic_potions/internal/processors"
 	"github.com/donskova1ex/magic_potions/internal/repositories"
 	"github.com/joho/godotenv"
@@ -67,7 +67,11 @@ func main() {
 
 	router := openapi.NewRouter(IngredientAPIController, RecipeAPIController, WitchAPIController)
 	requestLogger := middleware.RequestLogger(logger)
-	router.Use(middleware.RequestIDMiddleware, requestLogger)
+
+	metrics := metrics.NewMetrics()
+	metricsMiddleware := middleware.MetricsMiddleware(metrics)
+
+	router.Use(middleware.RequestIDMiddleware, requestLogger, metricsMiddleware)
 
 	httpServer := http.Server{
 		Addr:     ":" + apiPort,
