@@ -122,6 +122,38 @@ services:
       <<: *kafka_broker_env_base
       KAFKA_BROKER_ID: 3
       KAFKA_ADVERTISED_LISTENERS: EXTERNAL://localhost:39092,INTERNAL://kafka3:9092
+  prometheus:
+    image: prom/prometheus:v2.49.1
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - ./prometheus/prom_data:/prometheus
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:10.3.1
+    restart: always
+    environment:
+      GF_INSTALL_PLUGINS: 'grafana-piechart-panel'
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana/data:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    depends_on:
+      - prometheus
   consumer:
     container_name: magic_potions.consumer
     environment:
