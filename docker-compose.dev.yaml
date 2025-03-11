@@ -70,6 +70,7 @@ services:
         condition: service_healthy
   api:
     container_name: magic_potions.api
+    hostname: api
     environment:
       - API_PORT=${API_PORT}
       - POSTGRES_DSN=${POSTGRES_DSN}
@@ -133,13 +134,6 @@ services:
     volumes:
       - ./prometheus:/etc/prometheus
       - ./prometheus/prom_data:/prometheus
-    depends_on:
-      kafka1:
-        condition: service_healthy
-      kafka2:
-        condition: service_healthy
-      kafka3:
-        condition: service_healthy
 
   grafana:
     container_name: grafana

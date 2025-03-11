@@ -14,6 +14,7 @@ import (
 	"github.com/donskova1ex/magic_potions/internal/processors"
 	"github.com/donskova1ex/magic_potions/internal/repositories"
 	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	openapi "github.com/donskova1ex/magic_potions/openapi"
 )
@@ -72,6 +73,7 @@ func main() {
 	metricsMiddleware := middleware.MetricsMiddleware(metrics)
 
 	router.Use(middleware.RequestIDMiddleware, requestLogger, metricsMiddleware)
+	router.Path("/metrics").Handler(promhttp.Handler())
 
 	httpServer := http.Server{
 		Addr:     ":" + apiPort,

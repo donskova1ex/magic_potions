@@ -23,6 +23,9 @@ dev-migrate-down:
 
 dev-api-run:
 	go run cmd/api/api.go
+	
+dev-api-up:
+	$(DEV_COMPOSE) --profile api up -d api
 
 build-kafka:
 	docker build -t kafka-jmx -f Dockerfile.kafka .
