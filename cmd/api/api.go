@@ -69,8 +69,8 @@ func main() {
 	router := openapi.NewRouter(IngredientAPIController, RecipeAPIController, WitchAPIController)
 	requestLogger := middleware.RequestLogger(logger)
 
-	metrics := metrics.NewMetrics()
-	metricsMiddleware := middleware.MetricsMiddleware(metrics)
+	metricsNew := metrics.NewMetrics()
+	metricsMiddleware := middleware.MetricsMiddleware(metricsNew)
 
 	router.Use(middleware.RequestIDMiddleware, requestLogger, metricsMiddleware)
 	router.Path("/metrics").Handler(promhttp.Handler())
