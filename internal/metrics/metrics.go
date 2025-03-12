@@ -37,12 +37,9 @@ func (m *Metrics) RequestsTotal(method string, status int, path string) {
 }
 
 func (m *Metrics) Latency(method string, status int, path string, d time.Duration) {
-	//m.latency.WithLabelValues(method, strconv.Itoa(status), path).Observe(d.Seconds())
 	m.latency.With(prometheus.Labels{
 		"method": method,
 		"status": strconv.Itoa(status),
 		"path":   path,
 	}).Observe(d.Seconds())
 }
-
-//TODO: latecy
