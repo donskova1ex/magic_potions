@@ -6,3 +6,6 @@ scrape_configs:
 - job_name: 'api'
   static_configs:
   - targets: ['api:8080']
+- job_name: 'kafka'
+  static_configs:
+    - targets: ['kafka1:7071', 'kafka2:7071', 'kafka3:7071']

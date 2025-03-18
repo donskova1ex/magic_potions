@@ -5,6 +5,7 @@ x-kafka-broker-env-base: &kafka_broker_env_base
   KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: EXTERNAL:PLAINTEXT,INTERNAL:PLAINTEXT
   KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
   KAFKA_CONFLUENT_TOPIC_REPLICATION_FACTOR: 2
+  EXTRA_ARGS: -javaagent:/etc/kafka/jmx_prometheus_javaagent-0.20.0.jar=7071:/etc/kafka/metrics/jmx-exporter-kafka.yml
 
 x-kafka-broker-base: &kafka_broker_base
   image: kafka-jmx
@@ -84,12 +85,13 @@ services:
   zookeeper:
     image: zookeeper-jmx
     hostname: zookeeper
-    container_name: magic_potions.zookeeper
+    container_name: zookeeper
     ports:
       - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      EXTRA_ARGS: -javaagent:/etc/zookeeper/jmx_prometheus_javaagent-0.20.0.jar=7072:/etc/zookeeper/metrics/jmx-exporter-zookeeper.yml
     healthcheck:
       test: jps -l | grep zookeeper || exit 1
       start_period: 1s
@@ -99,6 +101,7 @@ services:
   kafka1:
     <<: *kafka_broker_base
     container_name: magic_potions.kafka1
+    hostname: kafka1
     ports:
       - "19092:19092"
     environment:
@@ -108,6 +111,7 @@ services:
   kafka2:
     <<: *kafka_broker_base
     container_name: magic_potions.kafka2
+    hostname: kafka2
     ports:
       - "29092:29092"
     environment:
@@ -117,6 +121,7 @@ services:
   kafka3:
     <<: *kafka_broker_base
     container_name: magic_potions.kafka3
+    hostname: kafka3
     ports:
       - "39092:39092"
     environment:
@@ -134,6 +139,13 @@ services:
     volumes:
       - ./prometheus:/etc/prometheus
       - ./prometheus/prom_data:/prometheus
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
 
   grafana:
     container_name: grafana
