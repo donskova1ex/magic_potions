@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package brewing;
+
+service BrewingService {
+    rpc StartCooking(StartCookingRequest) returns (StartCookingResponse);
+    rpc GetCookingStatus(GetCookingStatusRequest) returns (GetCookingStatusResponse);
+}
+
+message Recipe {
+    string uuid = 1;
+    string name = 2;
+    int32 brew_time_seconds = 4;
+}
+
+message Witch {
+    string uuid = 1;
+    string name = 2;
+}
+
+message StartCookingRequest {
+    string recipe_uuid = 1;
+    string witch_uuid = 2;
+    int32 brew_time_seconds = 4;
+}
+
+message StartCookingResponse {
+    string recipe_uuid = 1;
+    string recipe_name = 2;
+    string witch_uuid = 3;
+    string witch_name = 4;
+    string status = 5;
+}
+
+message GetCookingStatusRequest {
+    string recipe_uuid = 1;
+}
+
+message GetCookingStatusResponse {
+    enum Status {
+        UNKNOWN = 0;
+        IN_PROGRESS = 1;
+        COMPLETED = 2;
+    }
+    Status status = 1;
+}
+
+
+
+
+
