@@ -2,15 +2,24 @@ syntax = "proto3";
 
 package brewing;
 
+option go_package = './generated';
+
 service BrewingService {
     rpc StartCooking(StartCookingRequest) returns (StartCookingResponse);
     rpc GetCookingStatus(GetCookingStatusRequest) returns (GetCookingStatusResponse);
 }
 
+message Ingredient {
+    string uuid = 1;
+    string name = 2;
+    int32 quantity = 3;
+}
+
 message Recipe {
     string uuid = 1;
     string name = 2;
-    int32 brew_time_seconds = 4;
+    int32 brew_time_seconds = 3;
+    repeated Ingredient ingredients = 4;
 }
 
 message Witch {
@@ -21,15 +30,16 @@ message Witch {
 message StartCookingRequest {
     string recipe_uuid = 1;
     string witch_uuid = 2;
-    int32 brew_time_seconds = 4;
+    int32 brew_time_seconds = 3;
 }
 
 message StartCookingResponse {
     string recipe_uuid = 1;
     string recipe_name = 2;
-    string witch_uuid = 3;
-    string witch_name = 4;
-    string status = 5;
+    repeated Ingredient ingredients = 3;
+    string witch_uuid = 4;
+    string witch_name = 5;
+    string status = 6;
 }
 
 message GetCookingStatusRequest {
@@ -44,8 +54,3 @@ message GetCookingStatusResponse {
     }
     Status status = 1;
 }
-
-
-
-
-

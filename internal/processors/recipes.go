@@ -25,27 +25,27 @@ type RecipesLogger interface {
 	Info(msg string, args ...any)
 }
 
-type recipes struct {
+type Recipes struct {
 	recipesRepository RecipesRepository
 	log               RecipesLogger
 }
 
-func NewRecipe(recipesRepository RecipesRepository, log RecipesLogger) *recipes {
-	return &recipes{recipesRepository: recipesRepository, log: log}
+func NewRecipe(recipesRepository RecipesRepository, log RecipesLogger) *Recipes {
+	return &Recipes{recipesRepository: recipesRepository, log: log}
 }
 
 // TODO: тестирование не забывать делать после методов
-func (rec *recipes) RecipesList(ctx context.Context) ([]*domain.Recipe, error) {
+func (rec *Recipes) RecipesList(ctx context.Context) ([]*domain.Recipe, error) {
 	r, err := rec.recipesRepository.RecipesAll(ctx)
 	if err != nil {
-		rec.log.Error("it is impossible to get a recipes list",
+		rec.log.Error("it is impossible to get a Recipes list",
 			slog.String("err", err.Error()))
-		return nil, fmt.Errorf("recipes list getting error: %w", err)
+		return nil, fmt.Errorf("Recipes list getting error: %w", err)
 	}
 	return r, nil
 }
 
-func (rec *recipes) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*domain.Recipe, error) {
+func (rec *Recipes) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*domain.Recipe, error) {
 	r, err := rec.recipesRepository.CreateRecipe(ctx, recipe)
 	if err != nil {
 		rec.log.Error("unable to create recipe",
@@ -54,7 +54,7 @@ func (rec *recipes) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*d
 	}
 	return r, nil
 }
-func (rec *recipes) RecipeByUUID(ctx context.Context, uuid string) (*domain.Recipe, error) {
+func (rec *Recipes) RecipeByUUID(ctx context.Context, uuid string) (*domain.Recipe, error) {
 	r, err := rec.recipesRepository.RecipeByUUID(ctx, uuid)
 	if err != nil {
 		rec.log.Error("unable to get recipe by uuid",
@@ -65,7 +65,7 @@ func (rec *recipes) RecipeByUUID(ctx context.Context, uuid string) (*domain.Reci
 	return r, nil
 }
 
-func (rec *recipes) DeleteRecipeByUUID(ctx context.Context, uuid string) error {
+func (rec *Recipes) DeleteRecipeByUUID(ctx context.Context, uuid string) error {
 	err := rec.recipesRepository.DeleteRecipeByUUID(ctx, uuid)
 	if err != nil {
 		rec.log.Error("unable to delete witch by uuid",
@@ -76,7 +76,7 @@ func (rec *recipes) DeleteRecipeByUUID(ctx context.Context, uuid string) error {
 	return nil
 }
 
-func (rec *recipes) UpdateRecipeByID(ctx context.Context, recipe *domain.Recipe) (*domain.Recipe, error) {
+func (rec *Recipes) UpdateRecipeByID(ctx context.Context, recipe *domain.Recipe) (*domain.Recipe, error) {
 
 	r, err := rec.recipesRepository.UpdateRecipeByUUID(ctx, recipe)
 	if err != nil {
@@ -88,7 +88,7 @@ func (rec *recipes) UpdateRecipeByID(ctx context.Context, recipe *domain.Recipe)
 }
 
 // TODO вынести в отдельную функцию конверт анмаршла в домаин структуры
-func (rec *recipes) Save(ctx context.Context, key []byte, body []byte, timeStamp time.Time) error {
+func (rec *Recipes) Save(ctx context.Context, key []byte, body []byte, timeStamp time.Time) error {
 	//TODO: валидация структур
 	recipe := &consumers.Recipe{}
 	if err := json.Unmarshal(body, recipe); err != nil {

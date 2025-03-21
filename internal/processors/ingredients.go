@@ -20,27 +20,27 @@ type IngredientsLogger interface {
 	Info(msg string, args ...any)
 }
 
-type ingredients struct {
+type Ingredients struct {
 	ingredientsRepository IngredientsRepository
 	log                   IngredientsLogger
 }
 
-func NewIngredient(ingredientsRepository IngredientsRepository, log IngredientsLogger) *ingredients {
-	return &ingredients{ingredientsRepository: ingredientsRepository, log: log}
+func NewIngredient(ingredientsRepository IngredientsRepository, log IngredientsLogger) *Ingredients {
+	return &Ingredients{ingredientsRepository: ingredientsRepository, log: log}
 }
 
-func (i *ingredients) IngredientsList(ctx context.Context) ([]*domain.Ingredient, error) {
+func (i *Ingredients) IngredientsList(ctx context.Context) ([]*domain.Ingredient, error) {
 
 	r, err := i.ingredientsRepository.IngredientsAll(ctx)
 	if err != nil {
-		i.log.Error("it is impossible to get a ingredients list", slog.String("err", err.Error()))
-		return nil, fmt.Errorf("it is impossible to get a ingredients list: %w", err)
+		i.log.Error("it is impossible to get a Ingredients list", slog.String("err", err.Error()))
+		return nil, fmt.Errorf("it is impossible to get a Ingredients list: %w", err)
 	}
 
 	return r, nil
 }
 
-func (i *ingredients) GetIngredientByUUID(ctx context.Context, uuid string) (*domain.Ingredient, error) {
+func (i *Ingredients) GetIngredientByUUID(ctx context.Context, uuid string) (*domain.Ingredient, error) {
 	ing, err := i.ingredientsRepository.IngredientByUUID(ctx, uuid)
 	if err != nil {
 		i.log.Error("unable to get ingredient by uuid",
@@ -50,7 +50,7 @@ func (i *ingredients) GetIngredientByUUID(ctx context.Context, uuid string) (*do
 	}
 	return ing, nil
 }
-func (i *ingredients) DeleteIngredientByUUID(ctx context.Context, uuid string) error {
+func (i *Ingredients) DeleteIngredientByUUID(ctx context.Context, uuid string) error {
 	err := i.ingredientsRepository.DeleteIngredientByUUID(ctx, uuid)
 	if err != nil {
 		i.log.Error("unable to delete ingredient by uuid",
@@ -61,7 +61,7 @@ func (i *ingredients) DeleteIngredientByUUID(ctx context.Context, uuid string) e
 	return nil
 }
 
-func (i *ingredients) UpdateIngredientByUUID(ctx context.Context, ingredient *domain.Ingredient) (*domain.Ingredient, error) {
+func (i *Ingredients) UpdateIngredientByUUID(ctx context.Context, ingredient *domain.Ingredient) (*domain.Ingredient, error) {
 	ing, err := i.ingredientsRepository.UpdateIngredientByUUID(ctx, ingredient)
 	if err != nil {
 		i.log.Error("unable to update ingredient by uuid")
@@ -70,7 +70,7 @@ func (i *ingredients) UpdateIngredientByUUID(ctx context.Context, ingredient *do
 	return ing, nil
 }
 
-func (i *ingredients) CreateIngredient(ctx context.Context, ingredient *domain.Ingredient) (*domain.Ingredient, error) {
+func (i *Ingredients) CreateIngredient(ctx context.Context, ingredient *domain.Ingredient) (*domain.Ingredient, error) {
 	ing, err := i.ingredientsRepository.CreateIngredient(ctx, ingredient)
 
 	if err != nil {

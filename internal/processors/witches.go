@@ -20,26 +20,26 @@ type WitchesLogger interface {
 	Info(msg string, args ...any)
 }
 
-type witches struct {
+type Witches struct {
 	witchesRepository WitchesRepository
 	log               WitchesLogger
 }
 
-func NewWitch(witchesRepository WitchesRepository, log WitchesLogger) *witches {
-	return &witches{witchesRepository: witchesRepository, log: log}
+func NewWitch(witchesRepository WitchesRepository, log WitchesLogger) *Witches {
+	return &Witches{witchesRepository: witchesRepository, log: log}
 }
 
-func (wtch *witches) WitchesList(ctx context.Context) ([]*domain.Witch, error) {
+func (wtch *Witches) WitchesList(ctx context.Context) ([]*domain.Witch, error) {
 	r, err := wtch.witchesRepository.WitchesAll(ctx)
 	if err != nil {
-		wtch.log.Error("it is impossible to get a witches list",
+		wtch.log.Error("it is impossible to get a Witches list",
 			slog.String("err", err.Error()))
-		return nil, fmt.Errorf("recipes list getting error: %w", err)
+		return nil, fmt.Errorf("Recipes list getting error: %w", err)
 	}
 	return r, nil
 }
 
-func (wtch *witches) GetWitchByUUID(ctx context.Context, uuid string) (*domain.Witch, error) {
+func (wtch *Witches) GetWitchByUUID(ctx context.Context, uuid string) (*domain.Witch, error) {
 	w, err := wtch.witchesRepository.WitchByUUID(ctx, uuid)
 	if err != nil {
 		wtch.log.Error("unable to get witch by uuid",
@@ -49,7 +49,7 @@ func (wtch *witches) GetWitchByUUID(ctx context.Context, uuid string) (*domain.W
 	}
 	return w, nil
 }
-func (wtch *witches) DeleteWitchByUUID(ctx context.Context, uuid string) error {
+func (wtch *Witches) DeleteWitchByUUID(ctx context.Context, uuid string) error {
 	err := wtch.witchesRepository.DeleteWitchByUUID(ctx, uuid)
 	if err != nil {
 		wtch.log.Error("unable to delete witch by uuid",
@@ -60,7 +60,7 @@ func (wtch *witches) DeleteWitchByUUID(ctx context.Context, uuid string) error {
 	return nil
 }
 
-func (wtch *witches) UpdateWitchByUUID(ctx context.Context, witch *domain.Witch) (*domain.Witch, error) {
+func (wtch *Witches) UpdateWitchByUUID(ctx context.Context, witch *domain.Witch) (*domain.Witch, error) {
 	w, err := wtch.witchesRepository.UpdateWitchByUUID(ctx, witch)
 	if err != nil {
 		wtch.log.Error("unable to update witch by uuid")
@@ -69,7 +69,7 @@ func (wtch *witches) UpdateWitchByUUID(ctx context.Context, witch *domain.Witch)
 	return w, nil
 }
 
-func (wtch *witches) CreateWitch(ctx context.Context, witch *domain.Witch) (*domain.Witch, error) {
+func (wtch *Witches) CreateWitch(ctx context.Context, witch *domain.Witch) (*domain.Witch, error) {
 	w, err := wtch.witchesRepository.CreateWitch(ctx, witch)
 
 	if err != nil {
