@@ -3,28 +3,26 @@ package services
 import (
 	"context"
 	"fmt"
+	"github.com/donskova1ex/magic_potions/cmd/grpc/generated"
 	"log/slog"
 	"sync"
 	"time"
 
-	pb "github.com/donskova1ex/magic_potions/generated"
 	"github.com/donskova1ex/magic_potions/internal/processors"
 )
 
 type Server struct {
-	pb.UnimplementedBrewingServiceServer
-	cookingStatus map[string]pb.GetCookingStatusResponse_Status
+	generated.UnimplementedBrewingServiceServer
+	cookingStatus map[string]generated.GetCookingStatusResponse_Status
 	mu            *sync.Mutex
-	ingredients   *processors.Ingredients
 	recipes       *processors.Recipes
 	witches       *processors.Witches
 	logger        *slog.Logger
 }
 
 func NewServer(
-	cookingStatus map[string]pb.GetCookingStatusResponse_Status,
+	cookingStatus map[string]generated.GetCookingStatusResponse_Status,
 	mu *sync.Mutex,
-	ingredients *processors.Ingredients,
 	recipes *processors.Recipes,
 	witches *processors.Witches,
 	logger *slog.Logger,
@@ -33,14 +31,13 @@ func NewServer(
 	return &Server{
 		cookingStatus: cookingStatus,
 		mu:            mu,
-		ingredients:   ingredients,
 		recipes:       recipes,
 		witches:       witches,
 		logger:        logger,
 	}
 }
 
-func (s *Server) StartCooking(ctx context.Context, request *pb.StartCookingRequest) (*pb.StartCookingResponse, error) {
+func (s *Server) StartCooking(ctx context.Context, request *generated.StartCookingRequest) (*generated.StartCookingResponse, error) {
 	recipeUUID := request.GetRecipeUuid()
 	witchUUID := request.GetWitchUuid()
 	brewTimeSeconds := request.GetBrewTimeSeconds()
@@ -60,32 +57,22 @@ func (s *Server) StartCooking(ctx context.Context, request *pb.StartCookingReque
 		time.Sleep(time.Duration(brewTimeSeconds) * time.Second)
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		s.cookingStatus[recipeUUID] = pb.GetCookingStatusResponse_COMPLETED
+		s.cookingStatus[recipeUUID] = generated.GetCookingStatusResponse_COMPLETED
 	}()
 
 	s.mu.Lock()
-	s.cookingStatus[recipeUUID] = pb.GetCookingStatusResponse_IN_PROGRESS
+	s.cookingStatus[recipeUUID] = generated.GetCookingStatusResponse_IN_PROGRESS
 	s.mu.Unlock()
 
-	bpIngredients := make([]*pb.Ingredient, len(recipe.Ingredients))
-	for i, ingredient := range recipe.Ingredients {
-		bpIngredients[i] = &pb.Ingredient{
-			Uuid:     ingredient.UUID,
-			Name:     ingredient.Name,
-			Quantity: ingredient.Quantity,
-		}
-	}
-
-	return &pb.StartCookingResponse{
-		RecipeUuid:  recipeUUID,
-		RecipeName:  recipe.Name,
-		Ingredients: bpIngredients,
-		WitchUuid:   witch.UUID,
-		WitchName:   witch.Name,
-		Status:      "Started",
+	return &generated.StartCookingResponse{
+		RecipeUuid: recipeUUID,
+		RecipeName: recipe.Name,
+		WitchUuid:  witch.UUID,
+		WitchName:  witch.Name,
+		Status:     "Started",
 	}, nil
 }
-func (s *Server) GetCookingStatus(ctx context.Context, request *pb.GetCookingStatusRequest) (*pb.GetCookingStatusResponse, error) {
+func (s *Server) GetCookingStatus(ctx context.Context, request *generated.GetCookingStatusRequest) (*generated.GetCookingStatusResponse, error) {
 	recipeUUID := request.GetRecipeUuid()
 
 	s.mu.Lock()
@@ -97,7 +84,7 @@ func (s *Server) GetCookingStatus(ctx context.Context, request *pb.GetCookingSta
 		return nil, fmt.Errorf("could not get cooking status for recipe uuid %s", recipeUUID)
 	}
 
-	return &pb.GetCookingStatusResponse{
+	return &generated.GetCookingStatusResponse{
 		Status: status,
 	}, nil
 }

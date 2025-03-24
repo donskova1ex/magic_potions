@@ -9,17 +9,10 @@ service BrewingService {
     rpc GetCookingStatus(GetCookingStatusRequest) returns (GetCookingStatusResponse);
 }
 
-message Ingredient {
-    string uuid = 1;
-    string name = 2;
-    int32 quantity = 3;
-}
-
 message Recipe {
     string uuid = 1;
     string name = 2;
     int32 brew_time_seconds = 3;
-    repeated Ingredient ingredients = 4;
 }
 
 message Witch {
@@ -36,7 +29,6 @@ message StartCookingRequest {
 message StartCookingResponse {
     string recipe_uuid = 1;
     string recipe_name = 2;
-    repeated Ingredient ingredients = 3;
     string witch_uuid = 4;
     string witch_name = 5;
     string status = 6;

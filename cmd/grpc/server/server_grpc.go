@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/donskova1ex/magic_potions/cmd/grpc/generated"
 	"log"
 	"log/slog"
 	"net"
@@ -9,7 +10,6 @@ import (
 	"sync"
 
 	"github.com/donskova1ex/magic_potions/cmd/grpc/services"
-	pb "github.com/donskova1ex/magic_potions/generated"
 	"github.com/donskova1ex/magic_potions/internal/processors"
 	"github.com/donskova1ex/magic_potions/internal/repositories"
 	"github.com/joho/godotenv"
@@ -62,18 +62,17 @@ func main() {
 	defer db.Close()
 
 	repository := repositories.NewRepository(db, logger)
-	ingredientProcessor := processors.NewIngredient(repository, logger)
 	recipeProcessor := processors.NewRecipe(repository, logger)
 	witchProcessor := processors.NewWitch(repository, logger)
 
 	s := grpc.NewServer()
 
-	cookingStatus := make(map[string]pb.GetCookingStatusResponse_Status)
+	cookingStatus := make(map[string]generated.GetCookingStatusResponse_Status)
 	mu := &sync.Mutex{}
 
-	newServer := services.NewServer(cookingStatus, mu, ingredientProcessor, recipeProcessor, witchProcessor, logger)
+	newServer := services.NewServer(cookingStatus, mu, recipeProcessor, witchProcessor, logger)
 
-	pb.RegisterBrewingServiceServer(s, newServer)
+	generated.RegisterBrewingServiceServer(s, newServer)
 
 	reflection.Register(s)
 

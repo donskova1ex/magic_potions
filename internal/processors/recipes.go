@@ -112,8 +112,6 @@ func (rec *Recipes) Save(ctx context.Context, key []byte, body []byte, timeStamp
 	}
 	domainRecipe.Ingredients = domainIngredients
 
-	/*TODO: creating retry (повторение сохранения 3-5 раз, если сообщение так и не вычиталось, писать в логи).
-	RetryStruct и методы по ретраю*/
 	_, err := rec.CreateRecipe(ctx, domainRecipe)
 	if err != nil {
 		return fmt.Errorf("failed to greate recipe: %w", err)
