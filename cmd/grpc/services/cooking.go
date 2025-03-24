@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/donskova1ex/magic_potions/cmd/grpc/generated"
+	"github.com/google/uuid"
 	"log/slog"
 	"sync"
 	"time"
@@ -17,6 +18,7 @@ type Server struct {
 	mu            *sync.Mutex
 	recipes       *processors.Recipes
 	witches       *processors.Witches
+	potions       *processors.Potions
 	logger        *slog.Logger
 }
 
@@ -25,6 +27,7 @@ func NewServer(
 	mu *sync.Mutex,
 	recipes *processors.Recipes,
 	witches *processors.Witches,
+	potions *processors.Potions,
 	logger *slog.Logger,
 
 ) *Server {
@@ -33,6 +36,7 @@ func NewServer(
 		mu:            mu,
 		recipes:       recipes,
 		witches:       witches,
+		potions:       potions,
 		logger:        logger,
 	}
 }
@@ -40,6 +44,8 @@ func NewServer(
 func (s *Server) StartCooking(ctx context.Context, request *generated.StartCookingRequest) (*generated.StartCookingResponse, error) {
 	recipeUUID := request.GetRecipeUuid()
 	witchUUID := request.GetWitchUuid()
+	potionUUID := uuid.NewString()
+
 	brewTimeSeconds := request.GetBrewTimeSeconds()
 
 	recipe, err := s.recipes.RecipeByUUID(ctx, recipeUUID)
@@ -47,14 +53,29 @@ func (s *Server) StartCooking(ctx context.Context, request *generated.StartCooki
 		s.logger.Error("error getting recipe", slog.String("recipe_uuid", recipeUUID), slog.String("err", err.Error()))
 		return nil, fmt.Errorf("could not get recipe by uuid: %w", err)
 	}
+
 	witch, err := s.witches.GetWitchByUUID(ctx, witchUUID)
 	if err != nil {
 		s.logger.Error("error getting witch", slog.String("witch_uuid", witchUUID), slog.String("err", err.Error()))
 		return nil, fmt.Errorf("could not get witch by uuid: %w", err)
 	}
 
+	err = s.potions.CreatePotion(ctx, potionUUID, witchUUID, recipeUUID, "IN_PROGRESS")
+	if err != nil {
+		return nil, fmt.Errorf("could not create potion: %w", err)
+	}
+
 	go func() {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		time.Sleep(time.Duration(brewTimeSeconds) * time.Second)
+
+		err := s.potions.UpdatePotion(ctx, potionUUID, "COMPLETED")
+		if err != nil {
+			s.logger.Error("failed update status", slog.String("potion_id", potionUUID), slog.String("err", err.Error()))
+		}
+
 		s.mu.Lock()
 		defer s.mu.Unlock()
 		s.cookingStatus[recipeUUID] = generated.GetCookingStatusResponse_COMPLETED

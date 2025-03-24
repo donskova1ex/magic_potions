@@ -64,13 +64,14 @@ func main() {
 	repository := repositories.NewRepository(db, logger)
 	recipeProcessor := processors.NewRecipe(repository, logger)
 	witchProcessor := processors.NewWitch(repository, logger)
+	potionProcessor := processors.NewPotions(repository, logger)
 
 	s := grpc.NewServer()
 
 	cookingStatus := make(map[string]generated.GetCookingStatusResponse_Status)
 	mu := &sync.Mutex{}
 
-	newServer := services.NewServer(cookingStatus, mu, recipeProcessor, witchProcessor, logger)
+	newServer := services.NewServer(cookingStatus, mu, recipeProcessor, witchProcessor, potionProcessor, logger)
 
 	generated.RegisterBrewingServiceServer(s, newServer)
 
