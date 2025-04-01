@@ -3,10 +3,12 @@ package processors
 import (
 	"context"
 	"fmt"
-	"github.com/donskova1ex/magic_potions/internal/domain"
 	"log/slog"
+
+	"github.com/donskova1ex/magic_potions/internal/domain"
 )
 
+//go:generate mockgen -destination=./mocks/witches_repository.go -package=mocks -mock_names=WitchesRepository=WitchesRepository . WitchesRepository
 type WitchesRepository interface {
 	CreateWitch(ctx context.Context, witch *domain.Witch) (*domain.Witch, error)
 	WitchesAll(ctx context.Context) ([]*domain.Witch, error)
@@ -15,6 +17,7 @@ type WitchesRepository interface {
 	UpdateWitchByUUID(ctx context.Context, witch *domain.Witch) (*domain.Witch, error)
 }
 
+//go:generate mockgen -destination=./mocks/witches_logger.go -package=mocks -mock_names=WitchesLogger=WitchesLogger . WitchesLogger
 type WitchesLogger interface {
 	Error(msg string, args ...any)
 	Info(msg string, args ...any)
