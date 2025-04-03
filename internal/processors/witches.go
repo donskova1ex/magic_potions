@@ -37,7 +37,7 @@ func (wtch *Witches) WitchesList(ctx context.Context) ([]*domain.Witch, error) {
 	if err != nil {
 		wtch.log.Error("it is impossible to get a Witches list",
 			slog.String("err", err.Error()))
-		return nil, fmt.Errorf("Recipes list getting error: %w", err)
+		return nil, fmt.Errorf("Witches list getting error: %w", err)
 	}
 	return r, nil
 }

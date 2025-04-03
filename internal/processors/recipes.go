@@ -11,6 +11,7 @@ import (
 	"github.com/donskova1ex/magic_potions/internal/domain"
 )
 
+// TODO: mock tests
 type RecipesRepository interface {
 	RecipesAll(ctx context.Context) ([]*domain.Recipe, error)
 	CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*domain.Recipe, error)
