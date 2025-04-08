@@ -229,6 +229,61 @@ func (s *RecipesTestSuite) TestDeleteRecipeByUUIDError() {
 
 }
 
+func (s *RecipesTestSuite) TestUpdateRecipeByUUIDSuccess() {
+	expectedRecipe := &domain.Recipe{
+		ID:              1,
+		UUID:            "1",
+		Name:            "FirstRecipe",
+		BrewTimeSeconds: 10,
+		Ingredients:     nil,
+	}
+
+	gomock.InOrder(
+		s.repository.
+			EXPECT().
+			UpdateRecipeByUUID(gomock.Any(), gomock.Any()).
+			Return(expectedRecipe, nil),
+	)
+	recipe := &domain.Recipe{
+		ID:              2,
+		UUID:            "2",
+		Name:            "SecondRecipe",
+		BrewTimeSeconds: 20,
+		Ingredients:     nil,
+	}
+	actualRecipe, err := s.processor.UpdateRecipeByID(s.ctx, recipe)
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), expectedRecipe, actualRecipe)
+}
+
+func (s *RecipesTestSuite) TestUpdateRecipeByUUIDError() {
+	dbError := errors.New("db error")
+	expectedRecipe := &domain.Recipe{
+		ID:              1,
+		UUID:            "1",
+		Name:            "FirstRecipe",
+		BrewTimeSeconds: 10,
+		Ingredients:     nil,
+	}
+	expectedError := fmt.Errorf("can not update recipe: %s, error: %w",
+		expectedRecipe.Name,
+		dbError,
+	)
+
+	gomock.InOrder(
+		s.repository.
+			EXPECT().
+			UpdateRecipeByUUID(gomock.Any(), gomock.Any()).
+			Return(nil, dbError),
+		s.logger.
+			EXPECT().
+			Error(gomock.Any(), gomock.Any()),
+	)
+	actualRecipe, err := s.processor.UpdateRecipeByID(s.ctx, expectedRecipe)
+	require.Nil(s.T(), actualRecipe)
+	require.EqualError(s.T(), err, expectedError.Error())
+}
+
 func TestRecipesTestSuite(t *testing.T) {
 	suite.Run(t, new(RecipesTestSuite))
 }
