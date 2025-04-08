@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/jmoiron/sqlx"
 	"log"
 	"log/slog"
 	"net/http"
@@ -50,7 +51,12 @@ func main() {
 		logger.Error("can not create postgres db connection", slog.String("error", err.Error()))
 		return
 	}
-	defer db.Close()
+	defer func(db *sqlx.DB) {
+		err := db.Close()
+		if err != nil {
+			logger.Error("can not close postgres db connection", slog.String("error", err.Error()))
+		}
+	}(db)
 
 	repository := repositories.NewRepository(db, logger)
 
