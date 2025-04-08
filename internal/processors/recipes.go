@@ -11,7 +11,7 @@ import (
 	"github.com/donskova1ex/magic_potions/internal/domain"
 )
 
-// TODO: mock tests
+//go:generate mockgen -destination=./mocks/recipes_repository.go -package=mocks -mock_names=RecipesRepository=RecipesRepository . RecipesRepository
 type RecipesRepository interface {
 	RecipesAll(ctx context.Context) ([]*domain.Recipe, error)
 	CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*domain.Recipe, error)
@@ -21,6 +21,7 @@ type RecipesRepository interface {
 	CreateIngredient(ctx context.Context, ingredient *domain.Ingredient) (*domain.Ingredient, error)
 }
 
+//go:generate mockgen -destination=./mocks/recipes_logger.go -package=mocks -mock_names=RecipesLogger=RecipesLogger . RecipesLogger
 type RecipesLogger interface {
 	Error(msg string, args ...any)
 	Info(msg string, args ...any)
@@ -41,7 +42,7 @@ func (rec *Recipes) RecipesList(ctx context.Context) ([]*domain.Recipe, error) {
 	if err != nil {
 		rec.log.Error("it is impossible to get a Recipes list",
 			slog.String("err", err.Error()))
-		return nil, fmt.Errorf("Recipes list getting error: %w", err)
+		return nil, fmt.Errorf("recipes list getting error: %w", err)
 	}
 	return r, nil
 }
@@ -69,10 +70,10 @@ func (rec *Recipes) RecipeByUUID(ctx context.Context, uuid string) (*domain.Reci
 func (rec *Recipes) DeleteRecipeByUUID(ctx context.Context, uuid string) error {
 	err := rec.recipesRepository.DeleteRecipeByUUID(ctx, uuid)
 	if err != nil {
-		rec.log.Error("unable to delete witch by uuid",
+		rec.log.Error("unable to delete recipe by uuid",
 			slog.String("err", err.Error()),
 			slog.String("uuid", uuid))
-		return fmt.Errorf("unable to delete witch by uuid: %s, error: %w", uuid, err)
+		return fmt.Errorf("unable to delete recipe by uuid: %s, error: %w", uuid, err)
 	}
 	return nil
 }

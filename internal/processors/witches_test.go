@@ -53,7 +53,7 @@ func (s *WitchesTestSuite) TestWitchesListSuccess() {
 
 func (s *WitchesTestSuite) TestWitchesListError() {
 	dbError := errors.New("db error")
-	expectedError := fmt.Errorf("Witches list getting error: %w", dbError)
+	expectedError := fmt.Errorf("witches list getting error: %w", dbError)
 
 	gomock.InOrder(
 		s.repository.
