@@ -1,0 +1,455 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>processors: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/donskova1ex/magic_potions/internal/processors/ingredients.go (100.0%)</option>
+				
+				<option value="file1">github.com/donskova1ex/magic_potions/internal/processors/potions.go (0.0%)</option>
+				
+				<option value="file2">github.com/donskova1ex/magic_potions/internal/processors/recipes.go (0.0%)</option>
+				
+				<option value="file3">github.com/donskova1ex/magic_potions/internal/processors/witches.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package processors
+
+import (
+        "context"
+        "fmt"
+        "github.com/donskova1ex/magic_potions/internal/domain"
+        "log/slog"
+)
+
+//go:generate mockgen -destination=./mocks/ingredients_repository.go -package=mocks -mock_names=IngredientsRepository=IngredientsRepository . IngredientsRepository
+type IngredientsRepository interface {
+        CreateIngredient(ctx context.Context, ingredient *domain.Ingredient) (*domain.Ingredient, error)
+        IngredientsAll(ctx context.Context) ([]*domain.Ingredient, error)
+        IngredientByUUID(ctx context.Context, uuid string) (*domain.Ingredient, error)
+        DeleteIngredientByUUID(ctx context.Context, uuid string) error
+        UpdateIngredientByUUID(ctx context.Context, ingredient *domain.Ingredient) (*domain.Ingredient, error)
+}
+
+//go:generate mockgen -destination=./mocks/ingredients_logger.go -package=mocks -mock_names=IngredientsLogger=IngredientsLogger . IngredientsLogger
+type IngredientsLogger interface {
+        Error(msg string, args ...any)
+        Info(msg string, args ...any)
+}
+
+type Ingredients struct {
+        ingredientsRepository IngredientsRepository
+        log                   IngredientsLogger
+}
+
+func NewIngredient(ingredientsRepository IngredientsRepository, log IngredientsLogger) *Ingredients <span class="cov8" title="1">{
+        return &amp;Ingredients{ingredientsRepository: ingredientsRepository, log: log}
+}</span>
+
+func (i *Ingredients) IngredientsList(ctx context.Context) ([]*domain.Ingredient, error) <span class="cov8" title="1">{
+
+        r, err := i.ingredientsRepository.IngredientsAll(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                i.log.Error("it is impossible to get a ingredients list", slog.String("err", err.Error()))
+                return nil, fmt.Errorf("it is impossible to get a ingredients list: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return r, nil</span>
+}
+
+func (i *Ingredients) GetIngredientByUUID(ctx context.Context, uuid string) (*domain.Ingredient, error) <span class="cov8" title="1">{
+        ing, err := i.ingredientsRepository.IngredientByUUID(ctx, uuid)
+        if err != nil </span><span class="cov8" title="1">{
+                i.log.Error("unable to get ingredient by uuid",
+                        slog.String("err", err.Error()),
+                        slog.String("uuid", uuid))
+                return nil, fmt.Errorf("unable to get ingredient by uuid: %s, error: %w", uuid, err)
+        }</span>
+        <span class="cov8" title="1">return ing, nil</span>
+}
+func (i *Ingredients) DeleteIngredientByUUID(ctx context.Context, uuid string) error <span class="cov8" title="1">{
+        err := i.ingredientsRepository.DeleteIngredientByUUID(ctx, uuid)
+        if err != nil </span><span class="cov8" title="1">{
+                i.log.Error("unable to delete ingredient by uuid",
+                        slog.String("err", err.Error()),
+                        slog.String("uuid", uuid))
+                return fmt.Errorf("unable to delete ingredient by uuid: %s, error: %w", uuid, err)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (i *Ingredients) UpdateIngredientByUUID(ctx context.Context, ingredient *domain.Ingredient) (*domain.Ingredient, error) <span class="cov8" title="1">{
+        ing, err := i.ingredientsRepository.UpdateIngredientByUUID(ctx, ingredient)
+        if err != nil </span><span class="cov8" title="1">{
+                i.log.Error("unable to update ingredient by uuid")
+                return nil, fmt.Errorf("unable to update ingredient by uuid: %s, error: %w", ingredient.UUID, err)
+        }</span>
+        <span class="cov8" title="1">return ing, nil</span>
+}
+
+func (i *Ingredients) CreateIngredient(ctx context.Context, ingredient *domain.Ingredient) (*domain.Ingredient, error) <span class="cov8" title="1">{
+        ing, err := i.ingredientsRepository.CreateIngredient(ctx, ingredient)
+
+        if err != nil </span><span class="cov8" title="1">{
+                i.log.Error("unable to create ingredient",
+                        slog.String("err", err.Error()))
+                return nil, fmt.Errorf("unable to create ingredient: %s, error: %w", ingredient.Name, err)
+        }</span>
+
+        <span class="cov8" title="1">return ing, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package processors
+
+import (
+        "context"
+        "fmt"
+        "log/slog"
+)
+
+type PotionsRepository interface {
+        CreatePotion(ctx context.Context, potionUUID, witchUUID, recipeUUID, status string) error
+        UpdatePotion(ctx context.Context, potionUUID, status string) error
+}
+
+type PotionsLogger interface {
+        Error(msg string, args ...any)
+        Info(msg string, args ...any)
+}
+
+type Potions struct {
+        potionsRepository PotionsRepository
+        logger            PotionsLogger
+}
+
+func NewPotions(potionsRepository PotionsRepository, log PotionsLogger) *Potions <span class="cov0" title="0">{
+        return &amp;Potions{
+                potionsRepository: potionsRepository,
+                logger:            log,
+        }
+}</span>
+
+func (p *Potions) CreatePotion(ctx context.Context, potionUUID, witchUUID, recipeUUID, status string) error <span class="cov0" title="0">{
+        err := p.potionsRepository.CreatePotion(ctx, potionUUID, witchUUID, recipeUUID, status)
+        if err != nil </span><span class="cov0" title="0">{
+                p.logger.Error("error creating potion", slog.String("err", err.Error()))
+                return fmt.Errorf("error creating potion: %w", err)
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+func (p *Potions) UpdatePotion(ctx context.Context, potionUUID, status string) error <span class="cov0" title="0">{
+        err := p.potionsRepository.UpdatePotion(ctx, potionUUID, status)
+        if err != nil </span><span class="cov0" title="0">{
+                p.logger.Error("error updating potion", slog.String("err", err.Error()))
+                return fmt.Errorf("error updating potion: %w", err)
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package processors
+
+import (
+        "context"
+        "encoding/json"
+        "fmt"
+        "log/slog"
+        "time"
+
+        "github.com/donskova1ex/magic_potions/internal/consumers"
+        "github.com/donskova1ex/magic_potions/internal/domain"
+)
+
+//go:generate mockgen -destination=./mocks/recipes_repository.go -package=mocks -mock_names=RecipesRepository=RecipesRepository . RecipesRepository
+type RecipesRepository interface {
+        RecipesAll(ctx context.Context) ([]*domain.Recipe, error)
+        CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*domain.Recipe, error)
+        RecipeByUUID(ctx context.Context, uuid string) (*domain.Recipe, error)
+        DeleteRecipeByUUID(ctx context.Context, uuid string) error
+        UpdateRecipeByUUID(ctx context.Context, recipe *domain.Recipe) (*domain.Recipe, error)
+        CreateIngredient(ctx context.Context, ingredient *domain.Ingredient) (*domain.Ingredient, error)
+}
+
+//go:generate mockgen -destination=./mocks/recipes_logger.go -package=mocks -mock_names=RecipesLogger=RecipesLogger . RecipesLogger
+type RecipesLogger interface {
+        Error(msg string, args ...any)
+        Info(msg string, args ...any)
+}
+
+type Recipes struct {
+        recipesRepository RecipesRepository
+        log               RecipesLogger
+}
+
+func NewRecipe(recipesRepository RecipesRepository, log RecipesLogger) *Recipes <span class="cov0" title="0">{
+        return &amp;Recipes{recipesRepository: recipesRepository, log: log}
+}</span>
+
+func (rec *Recipes) RecipesList(ctx context.Context) ([]*domain.Recipe, error) <span class="cov0" title="0">{
+        r, err := rec.recipesRepository.RecipesAll(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                rec.log.Error("it is impossible to get a Recipes list",
+                        slog.String("err", err.Error()))
+                return nil, fmt.Errorf("recipes list getting error: %w", err)
+        }</span>
+        <span class="cov0" title="0">return r, nil</span>
+}
+
+func (rec *Recipes) CreateRecipe(ctx context.Context, recipe *domain.Recipe) (*domain.Recipe, error) <span class="cov0" title="0">{
+        r, err := rec.recipesRepository.CreateRecipe(ctx, recipe)
+        if err != nil </span><span class="cov0" title="0">{
+                rec.log.Error("unable to create recipe",
+                        slog.String("err", err.Error()))
+                return nil, fmt.Errorf("can not create recipe: %s, error: %w", recipe.Name, err)
+        }</span>
+        <span class="cov0" title="0">return r, nil</span>
+}
+func (rec *Recipes) RecipeByUUID(ctx context.Context, uuid string) (*domain.Recipe, error) <span class="cov0" title="0">{
+        r, err := rec.recipesRepository.RecipeByUUID(ctx, uuid)
+        if err != nil </span><span class="cov0" title="0">{
+                rec.log.Error("unable to get recipe by uuid",
+                        slog.String("err", err.Error()),
+                        slog.String("uuid", uuid))
+                return nil, fmt.Errorf("can not get recipe by uuid: %s, error: %w", uuid, err)
+        }</span>
+        <span class="cov0" title="0">return r, nil</span>
+}
+
+func (rec *Recipes) DeleteRecipeByUUID(ctx context.Context, uuid string) error <span class="cov0" title="0">{
+        err := rec.recipesRepository.DeleteRecipeByUUID(ctx, uuid)
+        if err != nil </span><span class="cov0" title="0">{
+                rec.log.Error("unable to delete recipe by uuid",
+                        slog.String("err", err.Error()),
+                        slog.String("uuid", uuid))
+                return fmt.Errorf("unable to delete recipe by uuid: %s, error: %w", uuid, err)
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+func (rec *Recipes) UpdateRecipeByID(ctx context.Context, recipe *domain.Recipe) (*domain.Recipe, error) <span class="cov0" title="0">{
+
+        r, err := rec.recipesRepository.UpdateRecipeByUUID(ctx, recipe)
+        if err != nil </span><span class="cov0" title="0">{
+                rec.log.Error("unable to update recipe",
+                        slog.String("err", err.Error()))
+                return nil, fmt.Errorf("can not update recipe: %s, error: %w", recipe.Name, err)
+        }</span>
+        <span class="cov0" title="0">return r, nil</span>
+}
+
+// TODO вынести в отдельную функцию конверт анмаршла в домаин структуры
+func (rec *Recipes) Save(ctx context.Context, key []byte, body []byte, timeStamp time.Time) error <span class="cov0" title="0">{
+        //TODO: валидация структур
+        recipe := &amp;consumers.Recipe{}
+        if err := json.Unmarshal(body, recipe); err != nil </span><span class="cov0" title="0">{
+                rec.log.Error(
+                        "can not unmarshal recipe",
+                        slog.String("err", err.Error()),
+                        slog.String("value", string(body)),
+                )
+                return nil
+        }</span>
+        <span class="cov0" title="0">domainRecipe := &amp;domain.Recipe{
+                Name:            recipe.Name,
+                BrewTimeSeconds: recipe.BrewTimeSeconds,
+        }
+        domainIngredients := []*domain.Ingredient{}
+        for _, ingredient := range recipe.Ingredients </span><span class="cov0" title="0">{
+                domainIngredients = append(domainIngredients, &amp;domain.Ingredient{
+                        Name:     ingredient.Name,
+                        Quantity: ingredient.Quantity,
+                })
+        }</span>
+        <span class="cov0" title="0">domainRecipe.Ingredients = domainIngredients
+
+        _, err := rec.CreateRecipe(ctx, domainRecipe)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to greate recipe: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package processors
+
+import (
+        "context"
+        "fmt"
+        "log/slog"
+
+        "github.com/donskova1ex/magic_potions/internal/domain"
+)
+
+//go:generate mockgen -destination=./mocks/witches_repository.go -package=mocks -mock_names=WitchesRepository=WitchesRepository . WitchesRepository
+type WitchesRepository interface {
+        CreateWitch(ctx context.Context, witch *domain.Witch) (*domain.Witch, error)
+        WitchesAll(ctx context.Context) ([]*domain.Witch, error)
+        WitchByUUID(ctx context.Context, uuid string) (*domain.Witch, error)
+        DeleteWitchByUUID(ctx context.Context, uuid string) error
+        UpdateWitchByUUID(ctx context.Context, witch *domain.Witch) (*domain.Witch, error)
+}
+
+//go:generate mockgen -destination=./mocks/witches_logger.go -package=mocks -mock_names=WitchesLogger=WitchesLogger . WitchesLogger
+type WitchesLogger interface {
+        Error(msg string, args ...any)
+        Info(msg string, args ...any)
+}
+
+type Witches struct {
+        witchesRepository WitchesRepository
+        log               WitchesLogger
+}
+
+func NewWitch(witchesRepository WitchesRepository, log WitchesLogger) *Witches <span class="cov0" title="0">{
+        return &amp;Witches{witchesRepository: witchesRepository, log: log}
+}</span>
+
+func (wtch *Witches) WitchesList(ctx context.Context) ([]*domain.Witch, error) <span class="cov0" title="0">{
+        r, err := wtch.witchesRepository.WitchesAll(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                wtch.log.Error("it is impossible to get a Witches list",
+                        slog.String("err", err.Error()))
+                return nil, fmt.Errorf("witches list getting error: %w", err)
+        }</span>
+        <span class="cov0" title="0">return r, nil</span>
+}
+
+func (wtch *Witches) GetWitchByUUID(ctx context.Context, uuid string) (*domain.Witch, error) <span class="cov0" title="0">{
+        w, err := wtch.witchesRepository.WitchByUUID(ctx, uuid)
+        if err != nil </span><span class="cov0" title="0">{
+                wtch.log.Error("unable to get witch by uuid",
+                        slog.String("err", err.Error()),
+                        slog.String("uuid", uuid))
+                return nil, fmt.Errorf("unable to get witch by uuid: %s, error: %w", uuid, err)
+        }</span>
+        <span class="cov0" title="0">return w, nil</span>
+}
+func (wtch *Witches) DeleteWitchByUUID(ctx context.Context, uuid string) error <span class="cov0" title="0">{
+        err := wtch.witchesRepository.DeleteWitchByUUID(ctx, uuid)
+        if err != nil </span><span class="cov0" title="0">{
+                wtch.log.Error("unable to delete witch by uuid",
+                        slog.String("err", err.Error()),
+                        slog.String("uuid", uuid))
+                return fmt.Errorf("unable to delete witch by uuid: %s, error: %w", uuid, err)
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+func (wtch *Witches) UpdateWitchByUUID(ctx context.Context, witch *domain.Witch) (*domain.Witch, error) <span class="cov0" title="0">{
+        w, err := wtch.witchesRepository.UpdateWitchByUUID(ctx, witch)
+        if err != nil </span><span class="cov0" title="0">{
+                wtch.log.Error("unable to update witch by uuid")
+                return nil, fmt.Errorf("unable to update witch by uuid: %s, error: %w", witch.Name, err)
+        }</span>
+        <span class="cov0" title="0">return w, nil</span>
+}
+
+func (wtch *Witches) CreateWitch(ctx context.Context, witch *domain.Witch) (*domain.Witch, error) <span class="cov0" title="0">{
+        w, err := wtch.witchesRepository.CreateWitch(ctx, witch)
+
+        if err != nil </span><span class="cov0" title="0">{
+                wtch.log.Error("unable to create witch",
+                        slog.String("err", err.Error()))
+                return nil, fmt.Errorf("unable to create witch: %s, error: %w", witch.Name, err)
+        }</span>
+
+        <span class="cov0" title="0">return w, nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
