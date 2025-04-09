@@ -7,6 +7,7 @@ import (
 	"log/slog"
 )
 
+//go:generate mockgen -destination=./mocks/ingredients_repository.go -package=mocks -mock_names=IngredientsRepository=IngredientsRepository . IngredientsRepository
 type IngredientsRepository interface {
 	CreateIngredient(ctx context.Context, ingredient *domain.Ingredient) (*domain.Ingredient, error)
 	IngredientsAll(ctx context.Context) ([]*domain.Ingredient, error)
@@ -15,6 +16,7 @@ type IngredientsRepository interface {
 	UpdateIngredientByUUID(ctx context.Context, ingredient *domain.Ingredient) (*domain.Ingredient, error)
 }
 
+//go:generate mockgen -destination=./mocks/ingredients_logger.go -package=mocks -mock_names=IngredientsLogger=IngredientsLogger . IngredientsLogger
 type IngredientsLogger interface {
 	Error(msg string, args ...any)
 	Info(msg string, args ...any)
@@ -33,8 +35,8 @@ func (i *Ingredients) IngredientsList(ctx context.Context) ([]*domain.Ingredient
 
 	r, err := i.ingredientsRepository.IngredientsAll(ctx)
 	if err != nil {
-		i.log.Error("it is impossible to get a Ingredients list", slog.String("err", err.Error()))
-		return nil, fmt.Errorf("it is impossible to get a Ingredients list: %w", err)
+		i.log.Error("it is impossible to get a ingredients list", slog.String("err", err.Error()))
+		return nil, fmt.Errorf("it is impossible to get a ingredients list: %w", err)
 	}
 
 	return r, nil

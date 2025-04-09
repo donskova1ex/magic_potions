@@ -36,7 +36,6 @@ func NewRecipe(recipesRepository RecipesRepository, log RecipesLogger) *Recipes 
 	return &Recipes{recipesRepository: recipesRepository, log: log}
 }
 
-// TODO: тестирование не забывать делать после методов
 func (rec *Recipes) RecipesList(ctx context.Context) ([]*domain.Recipe, error) {
 	r, err := rec.recipesRepository.RecipesAll(ctx)
 	if err != nil {

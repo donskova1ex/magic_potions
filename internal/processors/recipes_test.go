@@ -96,15 +96,7 @@ func (s *RecipesTestSuite) TestCreateRecipeSuccess() {
 			Return(expectedRecipe, nil),
 	)
 
-	recipe := &domain.Recipe{
-		ID:              2,
-		UUID:            "2",
-		Name:            "SecondRecipe",
-		BrewTimeSeconds: 20,
-		Ingredients:     nil,
-	}
-
-	actualRecipes, err := s.processor.CreateRecipe(s.ctx, recipe)
+	actualRecipes, err := s.processor.CreateRecipe(s.ctx, expectedRecipe)
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), expectedRecipe, actualRecipes)
 }
