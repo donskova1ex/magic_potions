@@ -1,1 +1,1 @@
-echo '{"name":"testing_recipe2","brew_time_seconds":31,"ingredients":[{"name":"stone","quantity":4},{"name":"water","quantity":5}]}' | kcat -P -b 127.0.0.1:19092 -t create_recipes.v1
+echo '{"name":"testing_recipe6","brew_time_seconds":12,"ingredients":[{"name":"stone","quantity":4},{"name":"water","quantity":5}]}' | kcat -P -b 127.0.0.1:19092 -t create_recipes.v1

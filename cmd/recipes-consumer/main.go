@@ -39,8 +39,11 @@ func main() {
 		return
 	}
 	defer db.Close()
-
-	repository := repositories.NewRepository(db, logger)
+	rdb, err := repositories.NewRedisDB(ctx)
+	if err != nil {
+		logger.Error("can not create redis db connection", slog.String("error", err.Error()))
+	}
+	repository := repositories.NewRepository(db, logger, rdb)
 	recipesProcessor := processors.NewRecipe(repository, logger)
 
 	brokers := strings.Split(brokersEnv, ",")

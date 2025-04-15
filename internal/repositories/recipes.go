@@ -3,9 +3,12 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	"log/slog"
+	"time"
 
 	"github.com/donskova1ex/magic_potions/internal"
 	"github.com/donskova1ex/magic_potions/internal/domain"
@@ -107,14 +110,41 @@ func (r *Repository) RecipesAll(ctx context.Context) ([]*domain.Recipe, error) {
 
 func (r *Repository) RecipeByUUID(ctx context.Context, uuid string) (*domain.Recipe, error) {
 	recipe := &domain.Recipe{}
+	redisKey := fmt.Sprintf("recipes:%s", uuid)
+
+	var recipeJSON string
+	err := r.redisCl.Get(ctx, redisKey).Scan(&recipeJSON)
+
+	if err == nil {
+		err = json.Unmarshal([]byte(recipeJSON), recipe)
+		if err != nil {
+			return nil, fmt.Errorf("can not unmarshal redis json: %w", err)
+		}
+		return recipe, nil
+	}
+
+	if !errors.Is(err, redis.Nil) {
+		return nil, fmt.Errorf("can not read redis json: %w", err)
+	}
+
 	query := "SELECT uuid, name, brew_time_seconds FROM recipes WHERE uuid = $1"
-	err := r.db.GetContext(ctx, recipe, query, uuid)
+	err = r.db.GetContext(ctx, recipe, query, uuid)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("err getting recipe with uuid [%s]: %w", uuid, err)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("err getting recipe with uuid [%s]: %w", uuid, err)
 	}
+
+	recipeJSONToRedis, err := json.Marshal(recipe)
+	if err != nil {
+		return nil, fmt.Errorf("can not marshal json: %w", err)
+	}
+	err = r.redisCl.Set(ctx, redisKey, recipeJSONToRedis, time.Hour).Err()
+	if err != nil {
+		return nil, fmt.Errorf("can not save recipe to redis with uuid [%s]: %w", uuid, err)
+	}
+
 	return recipe, nil
 }
 

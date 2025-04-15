@@ -57,8 +57,11 @@ func main() {
 			logger.Error("can not close postgres db connection", slog.String("error", err.Error()))
 		}
 	}(db)
-
-	repository := repositories.NewRepository(db, logger)
+	rdb, err := repositories.NewRedisDB(ctx)
+	if err != nil {
+		logger.Error("can not create redis db connection", slog.String("error", err.Error()))
+	}
+	repository := repositories.NewRepository(db, logger, rdb)
 
 	ingredientProcessor := processors.NewIngredient(repository, logger)
 	IngredientAPIService := openapi.NewIngredientAPIService(ingredientProcessor, logger)
