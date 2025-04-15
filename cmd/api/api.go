@@ -61,7 +61,7 @@ func main() {
 	if err != nil {
 		logger.Error("can not create redis db connection", slog.String("error", err.Error()))
 	}
-	repository := repositories.NewRepository(db, logger, rdb)
+	repository := repositories.NewRepository(db, rdb, logger)
 
 	ingredientProcessor := processors.NewIngredient(repository, logger)
 	IngredientAPIService := openapi.NewIngredientAPIService(ingredientProcessor, logger)
