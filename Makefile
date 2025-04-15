@@ -35,3 +35,5 @@ build-zookeeper:
 
 dev-db:
 	PATH=/opt/homebrew/bin/:PATH psql "postgres://dev:dev1234@localhost:5432/dev?sslmode=disable"
+redis-connect:
+	docker exec -it magic_potions.redis redis-cli -p 6379

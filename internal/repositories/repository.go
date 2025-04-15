@@ -13,6 +13,6 @@ type Repository struct {
 	redisCl *redis.Client
 }
 
-func NewRepository(db *sqlx.DB, logger *slog.Logger, redisCl *redis.Client) *Repository {
+func NewRepository(db *sqlx.DB, redisCl *redis.Client, logger *slog.Logger) *Repository {
 	return &Repository{db: db, logger: logger, redisCl: redisCl}
 }
